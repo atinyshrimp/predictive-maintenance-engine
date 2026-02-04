@@ -49,6 +49,7 @@ setup(
             "pytest>=7.4.0",
             "pytest-cov>=4.1.0",
             "pdoc3>=0.10.0",
+            "requests>=2.30.0",
         ],
         "viz": [
             "plotly>=5.14.0",

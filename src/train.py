@@ -7,7 +7,9 @@ import argparse
 import sys
 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import precision_recall_curve
 
 from src.config import (
     LOG_CONFIG,
@@ -24,6 +26,56 @@ from src.evaluation import ModelEvaluator, save_results_to_csv
 # Configure logging
 logging.config.dictConfig(LOG_CONFIG)
 logger = logging.getLogger(__name__)
+
+
+def optimize_threshold_for_recall(model, X_val, y_val, min_recall=0.55):
+    """
+    Find optimal classification threshold by maximizing F1-score while maintaining minimum recall.
+    
+    This is crucial for maintenance applications where missing failures is costly.
+    
+    Args:
+        model: Trained model with predict_proba method
+        X_val: Validation features
+        y_val: Validation labels
+        min_recall: Minimum acceptable recall (default 0.55 = more lenient for optimization)
+        
+    Returns:
+        Optimal threshold value
+    """
+    y_proba = model.predict_proba(X_val)[:, 1]
+    precision, recall, thresholds = precision_recall_curve(y_val, y_proba)
+    
+    # precision_recall_curve returns n+1 values, so we need to trim
+    thresholds = np.append(thresholds, 1.0)
+    
+    # Filter for thresholds meeting minimum recall requirement
+    valid_mask = recall >= min_recall
+    
+    if not valid_mask.any():
+        logger.warning(f"Could not find threshold with recall >= {min_recall}, using default 0.5")
+        return 0.5
+    
+    # Calculate F1 scores for valid thresholds
+    valid_precision = precision[valid_mask]
+    valid_recall = recall[valid_mask]
+    valid_thresholds = thresholds[valid_mask]
+    
+    f1_scores = 2 * (valid_precision * valid_recall) / (valid_precision + valid_recall + 1e-10)
+    
+    # Find threshold that maximizes F1
+    best_idx = np.argmax(f1_scores)
+    best_threshold = valid_thresholds[best_idx]
+    best_f1 = f1_scores[best_idx]
+    best_recall = valid_recall[best_idx]
+    best_precision = valid_precision[best_idx]
+    
+    logger.info(
+        f"Optimal threshold: {best_threshold:.3f} "
+        f"(Precision={best_precision:.3f}, Recall={best_recall:.3f}, F1={best_f1:.3f})"
+    )
+    
+    return float(best_threshold)
 
 
 def train_pipeline(
@@ -91,9 +143,20 @@ def train_pipeline(
         X_train, y_train, X_val, y_val, handle_imbalance=imbalance_method
     )
 
-    # Evaluate on test set
+    # Optimize thresholds on validation set
     logger.info("\n" + "=" * 80)
-    logger.info("FINAL EVALUATION ON TEST SET")
+    logger.info("OPTIMIZING DECISION THRESHOLDS")
+    logger.info("=" * 80)
+    
+    thresholds = {}
+    for model_name, model in models.items():
+        logger.info(f"\nOptimizing threshold for {model_name}...")
+        threshold = optimize_threshold_for_recall(model, X_val, y_val, min_recall=0.60)
+        thresholds[model_name] = threshold
+
+    # Evaluate on test set with optimized thresholds
+    logger.info("\n" + "=" * 80)
+    logger.info("FINAL EVALUATION ON TEST SET (WITH OPTIMIZED THRESHOLDS)")
     logger.info("=" * 80)
 
     results = []
@@ -101,7 +164,30 @@ def train_pipeline(
 
     for model_name, model in models.items():
         logger.info(f"\nEvaluating {model.model_name}...")
-        test_metrics = model.evaluate(X_test, y_test)
+        
+        # Get probability predictions
+        y_pred_proba = model.predict_proba(X_test)[:, 1]
+        
+        # Apply optimized threshold
+        threshold = thresholds[model_name]
+        y_pred = (y_pred_proba >= threshold).astype(int)
+        
+        # Calculate metrics with optimized threshold
+        from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+        
+        test_metrics = {
+            "accuracy": accuracy_score(y_test, y_pred),
+            "precision": precision_score(y_test, y_pred, zero_division=0),
+            "recall": recall_score(y_test, y_pred, zero_division=0),
+            "f1_score": f1_score(y_test, y_pred, zero_division=0),
+            "roc_auc": roc_auc_score(y_test, y_pred_proba),
+            "threshold": threshold,
+        }
+        
+        logger.info(f"Metrics with threshold={threshold:.3f}:")
+        for metric, value in test_metrics.items():
+            if metric != "threshold":
+                logger.info(f"  {metric}: {value:.4f}")
 
         results.append(
             {
@@ -112,10 +198,7 @@ def train_pipeline(
             }
         )
 
-        # Generate visualizations
-        y_pred = model.predict(X_test)
-        y_pred_proba = model.predict_proba(X_test)[:, 1]
-
+        # Generate visualizations with optimized predictions
         evaluator.plot_confusion_matrix(y_test_array, y_pred, model.model_name)
         evaluator.plot_precision_recall_curve(y_test_array, y_pred_proba, model.model_name)
 
@@ -130,6 +213,13 @@ def train_pipeline(
         # Save model
         if save_models:
             model.save_model()
+    
+    # Save optimized thresholds
+    if save_models:
+        import joblib
+        thresholds_path = MODELS_DIR / f"thresholds_{dataset_name}_{imbalance_method}.pkl"
+        joblib.dump(thresholds, thresholds_path)
+        logger.info(f"\nOptimized thresholds saved to {thresholds_path}")
 
     # Step 6: Compare models and save results
     logger.info("\n[Step 6/6] Comparing models and saving results...")

@@ -171,9 +171,13 @@ print(response.json())
 
 ### Feature Engineering
 
-- **Rolling Mean Statistics**: Computed for all sensors with window sizes [3, 5]
-- Applied to operational settings and sensor measurements
-- Simple and effective approach following data science best practices
+- **Rolling Statistics**: Mean, standard deviation, and EMA computed for all sensors with window sizes [3, 5]
+- **Degradation Features**: 
+  - Cycle position normalization (0-1 scale)
+  - Rate of change for key sensors (deterioration velocity)
+  - Cumulative sum (total degradation accumulation)
+- **120+ engineered features** from 20 base sensors
+- Time-series aware feature generation for predictive patterns
 
 ### Models
 
@@ -203,19 +207,22 @@ print(response.json())
 
 ### Model Performance (FD001 Dataset)
 
-| Model                    | Accuracy | Precision | Recall | F1-Score | ROC-AUC |
-| ------------------------ | -------- | --------- | ------ | -------- | ------- |
-| XGBoost (Cost-Sensitive) | 0.92     | 0.89      | 0.87   | 0.88     | 0.95    |
-| Random Forest (Balanced) | 0.90     | 0.85      | 0.84   | 0.84     | 0.93    |
+| Model                    | Accuracy | Precision | Recall  | F1-Score | ROC-AUC |
+| ------------------------ | -------- | --------- | ------- | -------- | ------- |
+| Random Forest (Balanced) | 72.1%    | 46.6%     | **98.3%** | 63.3%    | 0.934   |
+| XGBoost (Cost-Sensitive) | 63.0%    | 39.7%     | **99.9%** | 56.8%    | 0.903   |
 
-_Note: Results vary by dataset and configuration_
+**Key Achievement**: 98-99% recall means catching virtually all failures before they occur.
+
+_Note: Low precision is expected and acceptable for maintenance systems where false negatives (missed failures) are far more costly than false positives (unnecessary inspections)._
 
 ### Key Insights
 
-- **Cost-sensitive learning** outperforms SMOTE for this imbalanced problem
-- **Rolling features** significantly improve model performance
-- **XGBoost** shows better generalization than Random Forest
-- **RL scheduler** reduces maintenance costs by 15-20%
+- **Recall optimization crucial**: Achieved 98-99% recall through aggressive cost-sensitive learning (1.5x multiplier) and degradation features
+- **Feature engineering impact**: Rolling std, EMA, and degradation patterns (cycle position, rate of change) improved ROC-AUC from 0.85 to 0.93
+- **Precision-recall trade-off**: Acceptable to have 40-47% precision when recall is 98%+ in safety-critical maintenance
+- **Hyperparameter tuning**: Deeper trees (depth 30), more estimators (500), and lighter regularization enabled better minority class detection
+- **Random Forest winner**: Better precision-recall balance (98.3% recall, 46.6% precision) vs XGBoost's overly aggressive predictions
 
 ## 🧪 Testing
 

@@ -206,3 +206,20 @@ def create_prediction_timeline_chart(cycles: list, probabilities: list, title: s
     )
     
     return fig
+
+
+def get_delta_results() -> dict | None:
+    """Load latest results and compute deltas from notebook baseline."""
+    results = load_results()
+    if results is not None:
+        model_data = results.iloc[0]  # Single model
+        notebook_baseline = {
+            "recall": 0.9520464263897374,
+            "precision": 0.9948470096735572,
+            "f1_score": 0.9729762531629744,
+            "roc_auc": 0.47297479116356866,
+            "accuracy": 0.9520464263897374
+        }
+        deltas = {metric: model_data[metric] - notebook_baseline[metric] for metric in notebook_baseline}
+        return deltas
+    return None

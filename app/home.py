@@ -12,7 +12,7 @@ for predicting industrial equipment failures using the NASA Turbofan dataset.
 """)
 
 # Status indicators
-col1, col2, col3 = st.columns(3)
+col1, col2, _ = st.columns(3)
 
 with col1:
     model = load_model()
@@ -28,12 +28,6 @@ with col2:
         st.success(f"🎯 {recall:.0%} Recall")
     else:
         st.info("📊 Not trained")
-
-with col3:
-    if model:
-        st.success("🚀 API Ready")
-    else:
-        st.warning("⚠️ Train first")
 
 st.markdown("---")
 
@@ -64,7 +58,7 @@ st.subheader("🚀 Quick Start")
 
 st.code("""
 # 1. Train the model
-python src/train.py --dataset FD001 --imbalance cost_sensitive
+python src/train.py
 
 # 2. Start the API
 cd api && python app.py

@@ -1,0 +1,2 @@
+model,dataset,imbalance_method,accuracy,precision,recall,f1_score,roc_auc,threshold
+Random Forest (Balanced),FD001,cost_sensitive,0.7487018937080024,0.4381067961165049,0.9805975941016686,0.6056321150389454,0.9446338633755583,0.4074825423580193

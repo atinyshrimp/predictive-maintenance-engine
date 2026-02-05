@@ -17,7 +17,7 @@ RESULTS_PATH = DATA_DIR / "results.csv"
 
 # Model configuration
 MODEL_CONFIG = {
-    "failure_threshold": 100,  # Sweet spot between 50 and 125
+    "failure_threshold": 90,
     "test_size": 0.2,
     "validation_size": 0.2,
     "random_state": 42,
@@ -31,21 +31,6 @@ FEATURE_CONFIG = {
 }
 
 # Model hyperparameters
-XGBOOST_PARAMS = {
-    "objective": "binary:logistic",
-    "max_depth": 7,  # Deeper for complex patterns
-    "learning_rate": 0.03,  # Slower for better generalization
-    "n_estimators": 500,  # More trees
-    "min_child_weight": 3,  # Higher to reduce overfitting on noise
-    "subsample": 0.8,
-    "colsample_bytree": 0.8,
-    "gamma": 0.3,  # Regularization to prevent overfitting
-    "reg_alpha": 0.05,  # Lighter regularization
-    "reg_lambda": 0.5,
-    "random_state": 42,
-    "n_jobs": -1,
-}
-
 RANDOM_FOREST_PARAMS = {
     "n_estimators": 500,  # More trees for stability
     "max_depth": 30,  # Deeper trees

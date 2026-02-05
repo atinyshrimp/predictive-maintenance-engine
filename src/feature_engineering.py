@@ -98,7 +98,7 @@ class FeatureEngineer:
         # Cycle position (0 to 1, captures proximity to end-of-life)
         df['cycle_norm'] = (
             df.groupby(group_col)['time_in_cycles']
-            .transform(lambda x: x / x.max() if x.max() > 0 else 0)
+            .transform(lambda x: x / x.max() if x.max() > 0 else x * 0)
         )
         
         # Rate of change for key sensors (captures deterioration velocity)

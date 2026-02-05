@@ -119,7 +119,7 @@ class FeatureEngineer:
                 .cumsum()
             )
         
-        logger.info(f"Created degradation features: cycle_norm, rate_of_change, cumsum")
+        logger.info("Created degradation features: cycle_norm, rate_of_change, cumsum")
         return df
 
     def engineer_all_features(

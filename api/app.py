@@ -117,7 +117,7 @@ async def lifespan(app: FastAPI):
                 "from model. Please ensure the removed_features file exists or retrain the model."
             )
     except Exception as e:
-        logger.error(f"Error loading model or features: {e}")
+        logger.exception(f"Error loading model or features: {e}")
         model = None
         removed_features = []
     

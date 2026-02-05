@@ -39,7 +39,7 @@ XGBOOST_PARAMS = {
     "min_child_weight": 3,  # Higher to reduce overfitting on noise
     "subsample": 0.8,
     "colsample_bytree": 0.8,
-    "gamma": 0.3,  # Lower for more aggressive splits
+    "gamma": 0.3,  # Regularization to prevent overfitting
     "reg_alpha": 0.05,  # Lighter regularization
     "reg_lambda": 0.5,
     "random_state": 42,

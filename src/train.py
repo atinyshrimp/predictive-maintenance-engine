@@ -2,13 +2,13 @@
 
 import logging
 import logging.config
-from pathlib import Path
 import argparse
 import sys
 
 import pandas as pd
 import numpy as np
-from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import precision_recall_curve, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+
 
 from src.config import (
     LOG_CONFIG,
@@ -48,12 +48,12 @@ def unit_level_train_val_split(
     Returns:
         Tuple of (train_df, val_df)
     """
-    np.random.seed(random_state)
+    rng = np.random.default_rng(random_state)  # Set random seed for reproducibility
     
     units = df[unit_col].unique()
     n_val_units = max(1, int(len(units) * val_size))
     
-    val_units = np.random.choice(units, size=n_val_units, replace=False)
+    val_units = rng.choice(units, size=n_val_units, replace=False)
     train_units = np.setdiff1d(units, val_units)
     
     train_df = df[df[unit_col].isin(train_units)].copy()
@@ -216,10 +216,7 @@ def train_pipeline(
         # Apply optimized threshold
         threshold = thresholds[model_name]
         y_pred = (y_pred_proba >= threshold).astype(int)
-        
-        # Calculate metrics with optimized threshold
-        from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
-        
+                
         test_metrics = {
             "accuracy": accuracy_score(y_test, y_pred),
             "precision": precision_score(y_test, y_pred, zero_division=0),

@@ -48,7 +48,7 @@ with col5:
     st.metric("Accuracy", f"{model_data['accuracy']:.1%}",
               delta=f"{delta_acc:+.1f}%", delta_color="off")
 
-st.caption("📊 Δ vs. original notebook baseline (K-Neighbors/TPOT) • ROC-AUC improved from 0.48 (random) to 0.96")
+st.caption(f"📊 Δ vs. original notebook baseline (K-Neighbors/TPOT) • ROC-AUC improved from 0.48 (random) to {model_data['roc_auc']:.2f}")
 
 # Decision threshold if available
 if 'threshold' in model_data and model_data['threshold']:

@@ -58,7 +58,6 @@ Industrial equipment failures cause:
 | **ML** | scikit-learn, pandas, NumPy |
 | **API** | FastAPI, Pydantic, uvicorn |
 | **UI** | Streamlit, Plotly |
-| **Deployment** | Docker |
 
 ---
 

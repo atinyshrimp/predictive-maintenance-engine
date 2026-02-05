@@ -265,6 +265,11 @@ def train_pipeline(
         thresholds_path = MODELS_DIR / f"thresholds_{dataset_name}_{imbalance_method}.pkl"
         joblib.dump(thresholds, thresholds_path)
         logger.info(f"\nOptimized thresholds saved to {thresholds_path}")
+        
+        # Save removed features for inference consistency
+        removed_features_path = MODELS_DIR / f"removed_features_{dataset_name}_{imbalance_method}.pkl"
+        joblib.dump(removed_cols, removed_features_path)
+        logger.info(f"Removed features list saved to {removed_features_path}")
 
     # Step 7: Compare models and save results
     logger.info("\n[Step 7/7] Comparing models and saving results...")

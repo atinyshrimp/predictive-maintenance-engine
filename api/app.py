@@ -88,26 +88,33 @@ async def lifespan(app: FastAPI):
             model = joblib.load(MODEL_PATH)
             logger.info(f"Model loaded successfully from {MODEL_PATH}")
         else:
-            logger.warning(f"Model file not found at {MODEL_PATH}")
+            logger.error(f"Model file not found at {MODEL_PATH}")
             model = None
             
         # Load removed features list
         if REMOVED_FEATURES_PATH.exists():
             removed_features = joblib.load(REMOVED_FEATURES_PATH)
             logger.info(f"Removed features list loaded: {len(removed_features)} features to drop")
-        else:
-            # Fallback: Common low-variance features in FD001 dataset
-            removed_features = [
-                'operational_setting_3',
-                'sensor_measurement_1',
-                'sensor_measurement_5', 
-                'sensor_measurement_10',
-                'sensor_measurement_16',
-                'sensor_measurement_18',
-                'sensor_measurement_19',
-            ]
+        elif model is not None and hasattr(model, "feature_names_in_"):
+            # Derive removed features by comparing model's expected features with full feature set
+            model_features = set(model.feature_names_in_)
+            
+            # Build reference feature set (same columns as feature engineering pipeline)
+            base_cols = [f"operational_setting_{i}" for i in range(1, 4)]
+            base_cols += [f"sensor_measurement_{i}" for i in range(1, 27)]
+            
+            # Identify base features not used by the model (they were removed during training)
+            removed_features = [col for col in base_cols if col not in model_features]
+            
             logger.warning(
-                f"Removed features file not found. Using FD001 defaults: {len(removed_features)} features"
+                f"Removed features file not found. Derived {len(removed_features)} removed features "
+                f"from model's feature_names_in_: {removed_features}"
+            )
+        else:
+            # Cannot safely determine removed features - fail fast to prevent train/inference mismatch
+            raise RuntimeError(
+                f"Removed features file not found at {REMOVED_FEATURES_PATH} and cannot derive "
+                "from model. Please ensure the removed_features file exists or retrain the model."
             )
     except Exception as e:
         logger.error(f"Error loading model or features: {e}")

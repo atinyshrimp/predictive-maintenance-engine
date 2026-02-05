@@ -108,7 +108,7 @@ class ModelEvaluator:
         plt.ylim([0.0, 1.05])
         plt.xlabel("False Positive Rate", fontsize=12)
         plt.ylabel("True Positive Rate", fontsize=12)
-        plt.title("ROC Curves - Model Comparison", fontsize=14)
+        plt.title("ROC Curve", fontsize=14)
         plt.legend(loc="lower right", fontsize=10)
         plt.grid(alpha=0.3)
 
@@ -251,11 +251,11 @@ class ModelEvaluator:
 
         return report
 
-    def compare_models(
+    def plot_metrics_chart(
         self, models_metrics: Dict[str, Dict[str, float]], save: bool = True
     ) -> None:
         """
-        Compare multiple models with bar plots.
+        Plot model metrics as bar chart.
 
         Args:
             models_metrics: Dictionary mapping model names to their metrics
@@ -270,7 +270,7 @@ class ModelEvaluator:
             ax = axes[idx // 2, idx % 2]
             if metric in metrics_df.columns:
                 metrics_df[metric].plot(kind="bar", ax=ax, color="skyblue", edgecolor="black")
-                ax.set_title(f"{metric.replace('_', ' ').title()} Comparison", fontsize=12)
+                ax.set_title(f"{metric.replace('_', ' ').title()}", fontsize=12)
                 ax.set_ylabel("Score", fontsize=10)
                 ax.set_xlabel("Model", fontsize=10)
                 ax.set_ylim([0, 1])
@@ -280,9 +280,14 @@ class ModelEvaluator:
         plt.tight_layout()
 
         if save:
-            filepath = self.save_dir / "model_comparison.png"
+            filepath = self.save_dir / "metrics_chart.png"
             plt.savefig(filepath, dpi=300, bbox_inches="tight")
-            logger.info(f"Model comparison plot saved to {filepath}")
+            logger.info(f"Metrics chart saved to {filepath}")
+
+        plt.close()
+
+    # Keep old name for backward compatibility
+    compare_models = plot_metrics_chart
 
         plt.close()
 

@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import uvicorn
 
-from src.feature_engineering import FeatureEngineer
+from src.feature_engineering import FeatureEngineer, select_features_for_training
 
 # Configure logging
 logging.basicConfig(
@@ -209,7 +209,7 @@ async def predict_failure(data: SensorData):
                 logger.debug(f"Removed {len(cols_to_remove)} features (base + derived)")
         
         # Get the last time step (most recent) for prediction
-        X = df.iloc[[-1]].drop(columns=["unit_number", "time_in_cycles"], errors="ignore")
+        X = select_features_for_training(df.iloc[[-1]])
 
         # Make predictions
         failure_probability = float(model.predict_proba(X)[0][1])

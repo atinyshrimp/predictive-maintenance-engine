@@ -209,10 +209,10 @@ print(response.json())
 
 | Model                    | Accuracy | Precision | Recall    | F1-Score | ROC-AUC |
 | ------------------------ | -------- | --------- | --------- | -------- | ------- |
-| Random Forest (Balanced) | 72.1%    | 46.6%     | **98.3%** | 63.3%    | 0.934   |
-| XGBoost (Cost-Sensitive) | 63.0%    | 39.7%     | **99.9%** | 56.8%    | 0.903   |
+| Random Forest (Balanced) | 73.0%    | 47.4%     | **97.9%** | 63.9%    | 0.937   |
+| XGBoost (Cost-Sensitive) | 62.3%    | 39.2%     | **99.9%** | 56.4%    | 0.902   |
 
-**Key Achievement**: 98-99% recall means catching virtually all failures before they occur.
+**Key Achievement**: 97-99% recall means catching virtually all failures before they occur.
 
 _Note: Low precision is expected and acceptable for maintenance systems where false negatives (missed failures) are far more costly than false positives (unnecessary inspections)._
 
@@ -258,6 +258,8 @@ While the current system achieves 98-99% recall (catching virtually all failures
 - **Improvement**: 5-fold time-series cross-validation
 - **Benefit**: More reliable performance estimates, detect overfitting
 - **Tool**: `TimeSeriesSplit` from scikit-learn
+
+> **Note on Data Leakage Prevention**: The training pipeline uses **unit-level splitting** (assigning entire turbofan units to either train or validation) before computing rolling/EMA features. This prevents time-series information leakage that would occur if rolling windows were computed before splitting, ensuring the validation set provides an honest estimate of model performance.
 
 ### 5. **Extended Feature Engineering**
 

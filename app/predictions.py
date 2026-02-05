@@ -110,7 +110,7 @@ if input_method == "📊 Sample Data (Test Set)":
             # Show data preview
             with st.expander("📋 View Selected Window Data"):
                 window_data = unit_data.iloc[prediction_cycle - window_size:prediction_cycle]
-                st.dataframe(window_data, use_container_width=True)
+                st.dataframe(window_data, width="stretch")
             
             # Prediction button
             if st.button("🚀 Predict Failure Risk", type="primary"):
@@ -135,7 +135,7 @@ if input_method == "📊 Sample Data (Test Set)":
                         
                         with col1:
                             fig = create_gauge_chart(probability, f"Unit {selected_unit} @ Cycle {prediction_cycle}")
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width="stretch")
                         
                         with col2:
                             risk_level, color, recommendation = get_risk_level(probability)
@@ -235,7 +235,7 @@ if input_method == "📊 Sample Data (Test Set)":
                             cycles, probabilities,
                             f"Unit {selected_unit} - Failure Risk Evolution"
                         )
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width="stretch")
                         
                         # Summary statistics
                         st.markdown("---")
@@ -268,7 +268,7 @@ if input_method == "📊 Sample Data (Test Set)":
                                 'Risk Level': [get_risk_level(p)[0] for p in probabilities],
                                 'Lifecycle %': [f"{(c/total_cycles)*100:.1f}%" for c in cycles]
                             })
-                            st.dataframe(results_df, use_container_width=True)
+                            st.dataframe(results_df, width="stretch")
                         
                     except Exception as e:
                         st.error(f"Analysis error: {str(e)}")
@@ -337,7 +337,7 @@ elif input_method == "✏️ Manual Input":
                     
                     with col1:
                         fig = create_gauge_chart(probability, "Failure Risk")
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width="stretch")
                     
                     with col2:
                         risk_level, color, recommendation = get_risk_level(probability)
@@ -373,7 +373,7 @@ elif input_method == "📁 Upload CSV":
             st.success(f"✅ Loaded {len(df)} rows")
             
             with st.expander("📋 Preview Data"):
-                st.dataframe(df.head(10), use_container_width=True)
+                st.dataframe(df.head(10), width="stretch")
             
             # Select unit if multiple
             if 'unit_number' in df.columns:
@@ -420,7 +420,7 @@ elif input_method == "📁 Upload CSV":
                         
                         with col1:
                             fig = create_gauge_chart(probability, "Failure Risk")
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width="stretch")
                         
                         with col2:
                             risk_level, color, recommendation = get_risk_level(probability)

@@ -66,7 +66,7 @@ col1, col2 = st.columns([1, 1])
 
 with col1:
     if cm_img.exists():
-        st.image(str(cm_img), use_container_width=True)
+        st.image(str(cm_img), width="stretch")
     else:
         st.info("Run training to generate confusion matrix")
 
@@ -96,7 +96,7 @@ col1, col2 = st.columns(2)
 with col1:
     roc_img = ASSETS_DIR / "roc_curves_comparison.png"
     if roc_img.exists():
-        st.image(str(roc_img), caption="ROC Curve", use_container_width=True)
+        st.image(str(roc_img), caption="ROC Curve", width="stretch")
         st.caption("AUC: 0.5 = random, 1.0 = perfect")
     else:
         st.info("Run training to generate ROC curve")
@@ -104,7 +104,7 @@ with col1:
 with col2:
     pr_img = ASSETS_DIR / "precision_recall_random_forest_(balanced).png"
     if pr_img.exists():
-        st.image(str(pr_img), caption="Precision-Recall Curve", use_container_width=True)
+        st.image(str(pr_img), caption="Precision-Recall Curve", width="stretch")
         st.caption("Critical for imbalanced data")
     else:
         st.info("Run training to generate PR curve")
@@ -116,7 +116,7 @@ st.subheader("🔍 Top Predictive Features")
 
 fi_img = ASSETS_DIR / "feature_importance_random_forest_(balanced).png"
 if fi_img.exists():
-    st.image(str(fi_img), use_container_width=True)
+    st.image(str(fi_img), width="stretch")
     st.caption("Degradation patterns and rolling statistics are most predictive")
 else:
     st.info("Run training to generate feature importance plot")

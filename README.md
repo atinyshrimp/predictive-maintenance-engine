@@ -330,7 +330,7 @@ While the current system achieves 98-99% recall (catching virtually all failures
 ### Model Comparison
 
 ![Model Comparison](assets/model_comparison.png)
-*Comprehensive comparison of XGBoost and Random Forest across key metrics*
+_Comprehensive comparison of XGBoost and Random Forest across key metrics_
 
 ### Performance Visualizations
 
@@ -339,15 +339,17 @@ While the current system achieves 98-99% recall (catching virtually all failures
 <td width="50%">
 
 #### Confusion Matrix
-![Confusion Matrix](assets/confusion_matrix_random_forest_(balanced).png)
-*Random Forest: 98.3% recall with balanced confusion matrix*
+
+![Confusion Matrix](<assets/confusion_matrix_random_forest_(balanced).png>)
+_Random Forest: 98.3% recall with balanced confusion matrix_
 
 </td>
 <td width="50%">
 
 #### ROC Curve
+
 ![ROC Curves](assets/roc_curves_comparison.png)
-*ROC-AUC 0.934 demonstrates excellent discrimination*
+_ROC-AUC 0.934 demonstrates excellent discrimination_
 
 </td>
 </tr>
@@ -355,15 +357,17 @@ While the current system achieves 98-99% recall (catching virtually all failures
 <td width="50%">
 
 #### Precision-Recall Curve
-![Precision-Recall](assets/precision_recall_random_forest_(balanced).png)
-*Optimized for high recall in safety-critical maintenance*
+
+![Precision-Recall](<assets/precision_recall_random_forest_(balanced).png>)
+_Optimized for high recall in safety-critical maintenance_
 
 </td>
 <td width="50%">
 
 #### Feature Importance
-![Feature Importance](assets/feature_importance_random_forest_(balanced).png)
-*Top features: degradation patterns and rolling statistics*
+
+![Feature Importance](<assets/feature_importance_random_forest_(balanced).png>)
+_Top features: degradation patterns and rolling statistics_
 
 </td>
 </tr>

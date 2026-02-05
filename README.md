@@ -172,7 +172,7 @@ print(response.json())
 ### Feature Engineering
 
 - **Rolling Statistics**: Mean, standard deviation, and EMA computed for all sensors with window sizes [3, 5]
-- **Degradation Features**: 
+- **Degradation Features**:
   - Cycle position normalization (0-1 scale)
   - Rate of change for key sensors (deterioration velocity)
   - Cumulative sum (total degradation accumulation)
@@ -207,8 +207,8 @@ print(response.json())
 
 ### Model Performance (FD001 Dataset)
 
-| Model                    | Accuracy | Precision | Recall  | F1-Score | ROC-AUC |
-| ------------------------ | -------- | --------- | ------- | -------- | ------- |
+| Model                    | Accuracy | Precision | Recall    | F1-Score | ROC-AUC |
+| ------------------------ | -------- | --------- | --------- | -------- | ------- |
 | Random Forest (Balanced) | 72.1%    | 46.6%     | **98.3%** | 63.3%    | 0.934   |
 | XGBoost (Cost-Sensitive) | 63.0%    | 39.7%     | **99.9%** | 56.8%    | 0.903   |
 
@@ -223,6 +223,105 @@ _Note: Low precision is expected and acceptable for maintenance systems where fa
 - **Precision-recall trade-off**: Acceptable to have 40-47% precision when recall is 98%+ in safety-critical maintenance
 - **Hyperparameter tuning**: Deeper trees (depth 30), more estimators (500), and lighter regularization enabled better minority class detection
 - **Random Forest winner**: Better precision-recall balance (98.3% recall, 46.6% precision) vs XGBoost's overly aggressive predictions
+
+## 🔮 Potential Improvements
+
+While the current system achieves 98-99% recall (catching virtually all failures), here are potential enhancements for production deployment:
+
+### 1. **Precision Optimization**
+
+- **Current Challenge**: 40-47% precision means ~60% false positive rate
+- **Approach**: Multi-threshold strategy with different alert levels
+- **Expected Impact**: Reduce false alarms by 20-30% while maintaining 95%+ recall
+- **Implementation**:
+  - LOW risk threshold: 0.3 (high precision, catches severe cases)
+  - MEDIUM risk threshold: 0.4-0.5 (balanced)
+  - HIGH risk threshold: optimized for recall (current approach)
+
+### 2. **Failure Threshold Tuning**
+
+- **Current**: `failure_threshold = 100` cycles creates 49% failure rate (easier problem)
+- **Production**: Reduce to 50 cycles for more challenging, realistic prediction
+- **Trade-off**: Higher difficulty but more actionable predictions (imminent failures only)
+- **Expected Impact**: Precision improves to 55-65%, recall drops to 85-90%
+
+### 3. **Advanced Ensemble Methods**
+
+- **Soft Voting**: Combine Random Forest + XGBoost with weighted averaging
+- **Stacking**: Use meta-learner (Logistic Regression) on top of base models
+- **Expected Impact**: +1-2% ROC-AUC, +2-3% F1-score
+- **Implementation**: `VotingClassifier` with `voting='soft'` and optimized weights
+
+### 4. **Cross-Validation for Robustness**
+
+- **Current**: Single train/val/test split may have variance
+- **Improvement**: 5-fold time-series cross-validation
+- **Benefit**: More reliable performance estimates, detect overfitting
+- **Tool**: `TimeSeriesSplit` from scikit-learn
+
+### 5. **Extended Feature Engineering**
+
+- **Polynomial Features**: Interaction terms between correlated sensors
+- **Lag Features**: Previous cycle values (t-1, t-2, t-3)
+- **Sensor Correlations**: Cross-sensor relationships
+- **Domain Features**: Temperature gradients, pressure ratios
+- **Expected Impact**: +2-4% ROC-AUC for complex patterns
+
+### 6. **Model Interpretability**
+
+- **SHAP Values**: Explain individual predictions for maintenance teams
+- **LIME**: Local explanations for high-risk predictions
+- **Feature Contribution**: Show which sensors triggered the alert
+- **Benefit**: Trust and adoption by maintenance personnel
+
+### 7. **Hyperparameter Optimization**
+
+- **Current**: Manual tuning based on domain knowledge
+- **Approach**: Bayesian optimization with `Optuna` or `Hyperopt`
+- **Search Space**: 50-100 combinations
+- **Expected Impact**: +1-3% F1-score, better generalization
+
+### 8. **Multi-Dataset Generalization**
+
+- **Current**: Optimized for FD001 (single operating condition)
+- **Extension**: Train on FD001-FD004 combined
+- **Challenge**: Different operating conditions (altitude, mach number)
+- **Benefit**: Generalized model for diverse environments
+
+### 9. **Real-Time Monitoring Pipeline**
+
+- **Stream Processing**: Apache Kafka + Spark Streaming
+- **Incremental Updates**: Online learning for concept drift
+- **Alerting**: Integration with maintenance management systems
+- **Dashboard**: Real-time monitoring with Grafana/Tableau
+
+### 10. **Cost-Benefit Analysis**
+
+- **Quantify**: Maintenance cost vs. failure cost
+- **Optimize**: Threshold selection based on business metrics
+- **ROI**: Calculate expected savings from predictive maintenance
+- **Reporting**: Executive dashboard with financial impact
+
+### Priority Roadmap
+
+**High Priority (Production-Ready):**
+
+1. Multi-threshold alerting system (precision improvement)
+2. Model interpretability with SHAP (trust & adoption)
+3. Cross-validation (robustness validation)
+
+**Medium Priority (Enhanced Performance):**
+
+4. Failure threshold tuning to 50 cycles
+5. Ensemble methods (stacking/soft voting)
+6. Extended feature engineering
+
+**Long-Term (Scalability):**
+
+7. Multi-dataset training (FD001-FD004)
+8. Real-time streaming pipeline
+9. Automated hyperparameter optimization
+10. Cost-benefit optimization framework
 
 ## 🧪 Testing
 

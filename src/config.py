@@ -87,6 +87,14 @@ LOG_CONFIG = {
     },
 }
 
+NOTEBOOK_BASELINE = {
+    "recall": 0.9520464263897374,
+    "precision": 0.9948470096735572,
+    "f1_score": 0.9729762531629744,
+    "roc_auc": 0.47297479116356866,
+    "accuracy": 0.9520464263897374
+}
+
 def ensure_directories() -> None:
     """Create necessary directories if they don't exist."""
     directories = [

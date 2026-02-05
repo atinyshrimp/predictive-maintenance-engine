@@ -288,9 +288,7 @@ class ModelEvaluator:
 
     # Keep old name for backward compatibility
     compare_models = plot_metrics_chart
-
-    plt.close()
-
+    
 
 def save_results_to_csv(
     results: pd.DataFrame, filename: str = "model_results.csv"

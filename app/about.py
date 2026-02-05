@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-st.title("ℹ️ About This Project")
+st.title("ℹ️ About This Project") # noqa: RUF001
 
 st.markdown("""
 ## Predictive Maintenance Engine

@@ -24,7 +24,7 @@ pg = st.navigation([
     st.Page("home.py", title="Home", icon="🏠", default=True),
     st.Page("predictions.py", title="Predictions", icon="🔮"),
     st.Page("performance.py", title="Performance", icon="📊"),
-    st.Page("about.py", title="About", icon="ℹ️"),
+    st.Page("about.py", title="About", icon="ℹ️"), # noqa: RUF001
 ])
 
 # Add sidebar info

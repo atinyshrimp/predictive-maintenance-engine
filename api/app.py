@@ -81,7 +81,7 @@ scaler = None
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     """Manage application lifespan events."""
     # Startup
     global model, removed_features, scaler
@@ -98,8 +98,10 @@ async def lifespan(app: FastAPI):
             scaler = joblib.load(SCALER_PATH)
             logger.info(f"Scaler loaded successfully from {SCALER_PATH}")
         else:
-            logger.warning(f"Scaler not found at {SCALER_PATH}. Predictions may be inaccurate!")
+            logger.error(f"Scaler not found at {SCALER_PATH}. Predictions may be inaccurate!")
             scaler = None
+            model = None
+            raise RuntimeError("Scaler file missing; aborting startup to avoid invalid inference.")
             
         # Load removed features list
         if REMOVED_FEATURES_PATH.exists():

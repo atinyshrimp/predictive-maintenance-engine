@@ -2,7 +2,6 @@
 
 import streamlit as st
 import pandas as pd
-import numpy as np
 import sys
 from pathlib import Path
 
@@ -251,7 +250,7 @@ if input_method == "📊 Sample Data (Test Set)":
                             st.metric("Peak Risk", f"{max(probabilities):.1%}")
                         with col4:
                             # Find when it crossed 50% threshold
-                            crossover = next((c for c, p in zip(cycles, probabilities) if p > 0.5), None)
+                            crossover = next((c for c, p in zip(cycles, probabilities, strict=True) if p > 0.5), None)
                             st.metric("Risk > 50% at", f"Cycle {crossover}" if crossover else "Never")
                         
                         # Ground truth overlay
@@ -307,7 +306,7 @@ elif input_method == "✏️ Manual Input":
                         st.success(f"✅ {len(parsed)} values parsed")
                     else:
                         st.warning(f"Expected 29 values, got {len(parsed)}")
-                except:
+                except ValueError:
                     st.error("Invalid format. Use comma-separated numbers.")
     
     if len(time_steps) == 5:

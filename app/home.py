@@ -1,7 +1,7 @@
 """Home page for Predictive Maintenance Engine."""
 
 import streamlit as st
-from utils import load_model, load_results, ASSETS_DIR
+from utils import load_model, load_results
 
 st.title("🔧 Predictive Maintenance Engine")
 st.markdown("### AI-Powered Equipment Failure Prediction")
@@ -46,10 +46,10 @@ with col2:
     Model metrics, confusion matrix, ROC curves
     """)
 with col3:
-    st.markdown("""
-    **ℹ️ About**  
+    st.markdown(""" 
+    **ℹ️ About**
     Technical details and documentation
-    """)
+    """)  # noqa: RUF001
 
 st.markdown("---")
 

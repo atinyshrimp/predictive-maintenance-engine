@@ -117,7 +117,7 @@ Generate predictions and maintenance schedules:
 
 ```bash
 python src/predict.py \
-    --model models/random_forest_(balanced).pkl \
+    --model "models/random_forest_(balanced).pkl" \
     --dataset FD001 \
     --output data/predictions.csv
 ```

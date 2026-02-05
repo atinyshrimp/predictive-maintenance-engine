@@ -3,10 +3,9 @@
 import sys
 from pathlib import Path
 import pandas as pd
-import numpy as np
 import joblib
-import plotly.express as px
 import plotly.graph_objects as go
+from src.config import NOTEBOOK_BASELINE
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -213,13 +212,6 @@ def get_delta_results() -> dict | None:
     results = load_results()
     if results is not None:
         model_data = results.iloc[0]  # Single model
-        notebook_baseline = {
-            "recall": 0.9520464263897374,
-            "precision": 0.9948470096735572,
-            "f1_score": 0.9729762531629744,
-            "roc_auc": 0.47297479116356866,
-            "accuracy": 0.9520464263897374
-        }
-        deltas = {metric: model_data[metric] - notebook_baseline[metric] for metric in notebook_baseline}
+        deltas = {metric: model_data[metric] - NOTEBOOK_BASELINE[metric] for metric in NOTEBOOK_BASELINE}
         return deltas
     return None

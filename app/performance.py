@@ -51,7 +51,8 @@ with col5:
 st.caption(f"📊 Δ vs. original notebook baseline (K-Neighbors/TPOT) • ROC-AUC improved from 0.48 (random) to {model_data['roc_auc']:.2f}")
 
 # Decision threshold if available
-if 'threshold' in model_data and model_data['threshold']:
+threshold = model_data.get('threshold')
+if threshold:
     st.caption(f"📍 Decision threshold: {model_data['threshold']:.3f} (optimized for recall ≥ 95%)")
 
 st.markdown("---")

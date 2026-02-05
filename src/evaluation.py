@@ -289,7 +289,7 @@ class ModelEvaluator:
     # Keep old name for backward compatibility
     compare_models = plot_metrics_chart
 
-        plt.close()
+    plt.close()
 
 
 def save_results_to_csv(

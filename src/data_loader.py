@@ -153,7 +153,6 @@ class TurbofanDataLoader:
         # Add RUL to test data if requested
         if include_test_rul:
             # Assign final RUL to last cycle of each engine
-            test_engines = test_df.groupby('unit_number')
             test_df['RUL'] = 0  # Initialize
             
             for unit_id in test_df['unit_number'].unique():
@@ -166,9 +165,6 @@ class TurbofanDataLoader:
                 # Compute RUL for each cycle: final_rul + (max_cycle - current_cycle)
                 max_cycle = unit_data['time_in_cycles'].max()
                 test_df.loc[unit_mask, 'RUL'] = final_rul + (max_cycle - unit_data['time_in_cycles'])
-
-        # Compute RUL for training data
-        train_df = self.compute_rul(train_df)
 
         # Compute RUL for training data
         train_df = self.compute_rul(train_df)

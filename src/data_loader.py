@@ -108,7 +108,7 @@ class TurbofanDataLoader:
         self, train_df: pd.DataFrame, test_df: pd.DataFrame
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Scale numerical features using StandardScaler.
+        Scale numerical features using MinMaxScaler.
 
         Args:
             train_df: Training DataFrame
@@ -152,7 +152,19 @@ class TurbofanDataLoader:
 
         # Add RUL to test data if requested
         if include_test_rul:
-            test_df = pd.concat([test_df, rul_df], axis=1)
+            # Assign final RUL to last cycle of each engine
+            test_df['RUL'] = 0  # Initialize
+            
+            for unit_id in test_df['unit_number'].unique():
+                unit_mask = test_df['unit_number'] == unit_id
+                unit_data = test_df[unit_mask]
+                
+                # Get final RUL from rul_df
+                final_rul = rul_df.iloc[unit_id - 1]['RUL']
+                
+                # Compute RUL for each cycle: final_rul + (max_cycle - current_cycle)
+                max_cycle = unit_data['time_in_cycles'].max()
+                test_df.loc[unit_mask, 'RUL'] = final_rul + (max_cycle - unit_data['time_in_cycles'])
 
         # Compute RUL for training data
         train_df = self.compute_rul(train_df)

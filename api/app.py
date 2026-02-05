@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import uvicorn
 
-from src.feature_engineering import FeatureEngineer
+from src.feature_engineering import FeatureEngineer, select_features_for_training
 
 # Configure logging
 logging.basicConfig(
@@ -23,7 +23,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Load model at startup
-MODEL_PATH = Path(__file__).parent.parent / "models" / "best_pipeline.pkl"
+MODEL_PATH = Path(__file__).parent.parent / "models" / "random_forest_(balanced).pkl"
+REMOVED_FEATURES_PATH = Path(__file__).parent.parent / "models" / "removed_features_FD001_cost_sensitive.pkl"
 
 
 class SensorData(BaseModel):
@@ -74,23 +75,51 @@ class HealthResponse(BaseModel):
 
 # Global model variable
 model = None
+removed_features = []
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan events."""
     # Startup
-    global model
+    global model, removed_features
     try:
         if MODEL_PATH.exists():
             model = joblib.load(MODEL_PATH)
             logger.info(f"Model loaded successfully from {MODEL_PATH}")
         else:
-            logger.warning(f"Model file not found at {MODEL_PATH}")
+            logger.error(f"Model file not found at {MODEL_PATH}")
             model = None
+            
+        # Load removed features list
+        if REMOVED_FEATURES_PATH.exists():
+            removed_features = joblib.load(REMOVED_FEATURES_PATH)
+            logger.info(f"Removed features list loaded: {len(removed_features)} features to drop")
+        elif model is not None and hasattr(model, "feature_names_in_"):
+            # Derive removed features by comparing model's expected features with full feature set
+            model_features = set(model.feature_names_in_)
+            
+            # Build reference feature set (same columns as feature engineering pipeline)
+            base_cols = [f"operational_setting_{i}" for i in range(1, 4)]
+            base_cols += [f"sensor_measurement_{i}" for i in range(1, 27)]
+            
+            # Identify base features not used by the model (they were removed during training)
+            removed_features = [col for col in base_cols if col not in model_features]
+            
+            logger.warning(
+                f"Removed features file not found. Derived {len(removed_features)} removed features "
+                f"from model's feature_names_in_: {removed_features}"
+            )
+        else:
+            # Cannot safely determine removed features - fail fast to prevent train/inference mismatch
+            raise RuntimeError(
+                f"Removed features file not found at {REMOVED_FEATURES_PATH} and cannot derive "
+                "from model. Please ensure the removed_features file exists or retrain the model."
+            )
     except Exception as e:
-        logger.error(f"Error loading model: {e}")
+        logger.exception(f"Error loading model or features: {e}")
         model = None
+        removed_features = []
     
     yield
     
@@ -168,12 +197,26 @@ async def predict_failure(data: SensorData):
         
         df = pd.DataFrame(rows, columns=columns)
         
-        # Apply feature engineering (rolling mean with windows [3, 5])
+        # Apply feature engineering (rolling mean/std/ema + degradation features)
         feature_engineer = FeatureEngineer()
-        df = feature_engineer.create_rolling_features(df, group_col="unit_number")
+        df = feature_engineer.engineer_all_features(df)
+        
+        # Remove low-variance features (same as training)
+        if removed_features:
+            # Expand to include all derived features (ema, rolling_mean, rolling_std, rate_of_change, cumsum, etc.)
+            cols_to_remove = []
+            for col in df.columns:
+                for removed in removed_features:
+                    if col == removed or col.startswith(f"{removed}_"):
+                        cols_to_remove.append(col)
+                        break
+            
+            if cols_to_remove:
+                df = df.drop(columns=cols_to_remove, errors="ignore")
+                logger.debug(f"Removed {len(cols_to_remove)} features (base + derived)")
         
         # Get the last time step (most recent) for prediction
-        X = df.iloc[[-1]].drop(columns=["unit_number", "time_in_cycles"], errors="ignore")
+        X = select_features_for_training(df.iloc[[-1]])
 
         # Make predictions
         failure_probability = float(model.predict_proba(X)[0][1])

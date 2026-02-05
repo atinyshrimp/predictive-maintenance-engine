@@ -6,6 +6,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")  # Use non-GUI backend to avoid Tkinter threading issues
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import (

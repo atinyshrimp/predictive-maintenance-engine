@@ -36,7 +36,7 @@ XGBOOST_PARAMS = {
     "max_depth": 7,  # Deeper for complex patterns
     "learning_rate": 0.03,  # Slower for better generalization
     "n_estimators": 500,  # More trees
-    "min_child_weight": 3,  # Lower to better capture minority class
+    "min_child_weight": 3,  # Higher to reduce overfitting on noise
     "subsample": 0.8,
     "colsample_bytree": 0.8,
     "gamma": 0.3,  # Lower for more aggressive splits

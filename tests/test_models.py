@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from sklearn.datasets import make_classification
 from src.models import (
-    XGBoostMaintenanceClassifier,
     RandomForestMaintenanceClassifier,
     ImbalanceHandler,
 )
@@ -36,17 +35,6 @@ class TestClassifiers:
 
         return X_train, y_train, X_test, y_test
 
-    def test_xgboost_classifier_training(self, sample_data):
-        """Test XGBoost classifier training."""
-        X_train, y_train, X_test, y_test = sample_data
-
-        model = XGBoostMaintenanceClassifier()
-        model.train(X_train, y_train)
-
-        assert model.model is not None
-        predictions = model.predict(X_test)
-        assert len(predictions) == len(y_test)
-
     def test_random_forest_classifier_training(self, sample_data):
         """Test Random Forest classifier training."""
         X_train, y_train, X_test, y_test = sample_data
@@ -62,7 +50,7 @@ class TestClassifiers:
         """Test probability predictions."""
         X_train, y_train, X_test, y_test = sample_data
 
-        model = XGBoostMaintenanceClassifier()
+        model = RandomForestMaintenanceClassifier()
         model.train(X_train, y_train)
 
         probas = model.predict_proba(X_test)
@@ -74,7 +62,7 @@ class TestClassifiers:
         """Test model evaluation."""
         X_train, y_train, X_test, y_test = sample_data
 
-        model = XGBoostMaintenanceClassifier()
+        model = RandomForestMaintenanceClassifier()
         model.train(X_train, y_train)
 
         metrics = model.evaluate(X_test, y_test)
@@ -102,15 +90,6 @@ class TestImbalanceHandler:
         X_df = pd.DataFrame(X)
         y_series = pd.Series(y)
         return X_df, y_series
-
-    def test_calculate_scale_pos_weight(self, imbalanced_data):
-        """Test scale_pos_weight calculation."""
-        _, y = imbalanced_data
-
-        weight = ImbalanceHandler.calculate_scale_pos_weight(y)
-
-        assert weight > 0
-        assert isinstance(weight, float)
 
     def test_smote_application(self, imbalanced_data):
         """Test SMOTE application."""

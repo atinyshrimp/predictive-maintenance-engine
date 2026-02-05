@@ -12,8 +12,8 @@ This predictive maintenance system uses sensor data to forecast equipment failur
 
 - **Binary Classification**: Predicting failure vs. non-failure states
 - **Imbalanced Learning**: Handling class imbalance with SMOTE, undersampling, and cost-sensitive learning
-- **Feature Engineering**: Time-series rolling mean features with window sizes [3, 5]
-- **Model Comparison**: XGBoost and Random Forest with comprehensive evaluation
+- **Feature Engineering**: Time-series rolling statistics with window sizes [3, 5]
+- **Random Forest Model**: Balanced class weights with threshold optimization
 - **Reinforcement Learning**: Q-learning based maintenance scheduling optimization
 - **REST API**: Production-ready FastAPI deployment
 
@@ -96,7 +96,7 @@ pip install -e .
 
 ### Training Models
 
-Train models with default settings (XGBoost + Random Forest with cost-sensitive learning):
+Train the model with cost-sensitive learning:
 
 ```bash
 python src/train.py --dataset FD001 --imbalance cost_sensitive
@@ -117,7 +117,7 @@ Generate predictions and maintenance schedules:
 
 ```bash
 python src/predict.py \
-    --model models/xgboost.pkl \
+    --model "models/random_forest_(balanced).pkl" \
     --dataset FD001 \
     --output data/predictions.csv
 ```
@@ -179,10 +179,10 @@ print(response.json())
 - **120+ engineered features** from 20 base sensors
 - Time-series aware feature generation for predictive patterns
 
-### Models
+### Model
 
-- **XGBoost Classifier**: Gradient boosting with cost-sensitive learning
 - **Random Forest**: Ensemble method with balanced class weights
+- Threshold optimization for recall
 - Comprehensive hyperparameter configurations
 - Pipeline-based training for reproducibility
 
@@ -209,20 +209,19 @@ print(response.json())
 
 | Model                    | Accuracy | Precision | Recall    | F1-Score | ROC-AUC |
 | ------------------------ | -------- | --------- | --------- | -------- | ------- |
-| Random Forest (Balanced) | 73.0%    | 47.4%     | **97.9%** | 63.9%    | 0.937   |
-| XGBoost (Cost-Sensitive) | 62.3%    | 39.2%     | **99.9%** | 56.4%    | 0.902   |
+| Random Forest (Balanced) | 79.3%    | 43.3%     | **97.9%** | 60.0%    | 0.959   |
 
-**Key Achievement**: 97-99% recall means catching virtually all failures before they occur.
+**Key Achievement**: ~98% recall means catching virtually all failures before they occur.
 
 _Note: Low precision is expected and acceptable for maintenance systems where false negatives (missed failures) are far more costly than false positives (unnecessary inspections)._
 
 ### Key Insights
 
-- **Recall optimization crucial**: Achieved 98-99% recall through aggressive cost-sensitive learning (1.5x multiplier) and degradation features
-- **Feature engineering impact**: Rolling std, EMA, and degradation patterns (cycle position, rate of change) improved ROC-AUC from 0.85 to 0.93
-- **Precision-recall trade-off**: Acceptable to have 40-47% precision when recall is 98%+ in safety-critical maintenance
-- **Hyperparameter tuning**: Deeper trees (depth 30), more estimators (500), and lighter regularization enabled better minority class detection
-- **Random Forest winner**: Better precision-recall balance (98.3% recall, 46.6% precision) vs XGBoost's overly aggressive predictions
+- **Recall optimization crucial**: Achieved 98% recall through cost-sensitive learning (balanced class weights) and degradation features
+- **Feature engineering impact**: Rolling std, EMA, and degradation patterns (cycle position, rate of change) improved ROC-AUC from 0.85 to 0.96
+- **Precision-recall trade-off**: Acceptable to have ~43% precision when recall is 98%+ in safety-critical maintenance
+- **Hyperparameter tuning**: Deeper trees (depth 30), more estimators (500), and balanced class weights enabled better minority class detection
+- **Random Forest selected**: Best precision-recall balance for safety-critical predictive maintenance
 
 ## 🔮 Potential Improvements
 
@@ -247,7 +246,7 @@ While the current system achieves 98-99% recall (catching virtually all failures
 
 ### 3. **Advanced Ensemble Methods**
 
-- **Soft Voting**: Combine Random Forest + XGBoost with weighted averaging
+- **Soft Voting**: Combine multiple Random Forest models with weighted averaging
 - **Stacking**: Use meta-learner (Logistic Regression) on top of base models
 - **Expected Impact**: +1-2% ROC-AUC, +2-3% F1-score
 - **Implementation**: `VotingClassifier` with `voting='soft'` and optimized weights
@@ -329,11 +328,6 @@ While the current system achieves 98-99% recall (catching virtually all failures
 
 ## 📊 Project Showcase
 
-### Model Comparison
-
-![Model Comparison](assets/model_comparison.png)
-_Comprehensive comparison of XGBoost and Random Forest across key metrics_
-
 ### Performance Visualizations
 
 <table>
@@ -350,8 +344,8 @@ _Random Forest: 98.3% recall with balanced confusion matrix_
 
 #### ROC Curve
 
-![ROC Curves](assets/roc_curves_comparison.png)
-_ROC-AUC 0.934 demonstrates excellent discrimination_
+![ROC Curve](assets/roc_curves_comparison.png)
+_ROC-AUC 0.959 demonstrates excellent discrimination_
 
 </td>
 </tr>
@@ -466,7 +460,6 @@ See [deployment/](deployment/) for detailed guides.
 - [NASA Turbofan Engine Dataset](https://www.nasa.gov/content/prognostics-center-of-excellence-data-set-repository)
 - Saxena, A., & Goebel, K. (2008). Turbofan Engine Degradation Simulation Data Set. NASA Ames Prognostics Data Repository
 - Imbalanced Learning: [imbalanced-learn documentation](https://imbalanced-learn.org/)
-- XGBoost: [XGBoost Documentation](https://xgboost.readthedocs.io/)
 
 ## 🤝 Contributing
 
@@ -492,5 +485,5 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 ## 🙏 Acknowledgments
 
 - NASA PCoE for providing the turbofan engine dataset
-- Scikit-learn and XGBoost communities
+- Scikit-learn community
 - FastAPI framework developers

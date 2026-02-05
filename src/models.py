@@ -17,12 +17,10 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix,
 )
-from xgboost import XGBClassifier
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler
-from sklearn.pipeline import Pipeline
 
-from src.config import XGBOOST_PARAMS, RANDOM_FOREST_PARAMS, MODELS_DIR
+from src.config import RANDOM_FOREST_PARAMS, MODELS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -149,33 +147,6 @@ class MaintenanceClassifier:
         return instance
 
 
-class XGBoostMaintenanceClassifier(MaintenanceClassifier):
-    """XGBoost-based classifier for predictive maintenance."""
-
-    def __init__(
-        self,
-        use_cost_sensitive: bool = False,
-        scale_pos_weight: Optional[float] = None,
-        **kwargs,
-    ):
-        """
-        Initialize XGBoost classifier.
-
-        Args:
-            use_cost_sensitive: Whether to use cost-sensitive learning
-            scale_pos_weight: Weight for positive class (auto-calculated if None)
-            **kwargs: Additional XGBoost parameters
-        """
-        super().__init__(model_name="XGBoost")
-        params = {**XGBOOST_PARAMS, **kwargs}
-
-        if use_cost_sensitive and scale_pos_weight is not None:
-            params["scale_pos_weight"] = scale_pos_weight
-            self.model_name = "XGBoost (Cost-Sensitive)"
-
-        self.model = XGBClassifier(**params)
-
-
 class RandomForestMaintenanceClassifier(MaintenanceClassifier):
     """Random Forest-based classifier for predictive maintenance."""
 
@@ -251,31 +222,6 @@ class ImbalanceHandler:
             f"Resampled shape {X_resampled.shape}"
         )
         return pd.DataFrame(X_resampled, columns=X_train.columns), pd.Series(y_resampled, name=y_train.name)
-    
-    @staticmethod
-    def calculate_scale_pos_weight(y_train: pd.Series, multiplier: float = 1.5) -> float:
-        """
-        Calculate scale_pos_weight for XGBoost cost-sensitive learning.
-        
-        In predictive maintenance, false negatives (missing failures) are more costly
-        than false positives. Use multiplier > 1 to further prioritize recall.
-
-        Args:
-            y_train: Training labels
-            multiplier: Multiplier to increase weight (default 1.5 for maintenance)
-
-        Returns:
-            Calculated weight for positive class
-        """
-        n_negative = (y_train == 0).sum()
-        n_positive = (y_train == 1).sum()
-        weight = (n_negative / n_positive) * multiplier
-
-        logger.info(
-            f"Calculated scale_pos_weight: {weight:.2f} (base: {n_negative/n_positive:.2f}, "
-            f"multiplier: {multiplier}x) - negative: {n_negative}, positive: {n_positive}"
-        )
-        return weight
 
 
 def train_and_evaluate_models(
@@ -286,7 +232,7 @@ def train_and_evaluate_models(
     handle_imbalance: str = "none",
 ) -> Dict[str, MaintenanceClassifier]:
     """
-    Train and evaluate multiple models.
+    Train and evaluate Random Forest model.
 
     Args:
         X_train: Training features
@@ -298,7 +244,7 @@ def train_and_evaluate_models(
     Returns:
         Dictionary of trained models
     """
-    logger.info(f"Training models with imbalance handling: {handle_imbalance}")
+    logger.info(f"Training model with imbalance handling: {handle_imbalance}")
 
     # Handle class imbalance if requested
     X_train_processed = X_train.copy()
@@ -323,18 +269,5 @@ def train_and_evaluate_models(
     rf_model.train(X_train_processed, y_train_processed)
     rf_model.evaluate(X_val, y_val)
     models["random_forest"] = rf_model
-
-    # XGBoost
-    if handle_imbalance == "cost_sensitive":
-        scale_pos_weight = ImbalanceHandler.calculate_scale_pos_weight(y_train)
-        xgb_model = XGBoostMaintenanceClassifier(
-            use_cost_sensitive=True, scale_pos_weight=scale_pos_weight
-        )
-    else:
-        xgb_model = XGBoostMaintenanceClassifier()
-
-    xgb_model.train(X_train_processed, y_train_processed)
-    xgb_model.evaluate(X_val, y_val)
-    models["xgboost"] = xgb_model
 
     return models

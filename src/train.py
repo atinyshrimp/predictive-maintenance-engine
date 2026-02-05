@@ -65,7 +65,7 @@ def unit_level_train_val_split(
     return train_df, val_df
 
 
-def optimize_threshold_for_recall(model, X_val, y_val, min_recall=0.55):
+def optimize_threshold_for_recall(model, X_val, y_val, min_recall=0.55, min_threshold=0.4):
     """
     Find optimal classification threshold by maximizing F1-score while maintaining minimum recall.
     
@@ -76,6 +76,7 @@ def optimize_threshold_for_recall(model, X_val, y_val, min_recall=0.55):
         X_val: Validation features
         y_val: Validation labels
         min_recall: Minimum acceptable recall (default 0.55 = more lenient for optimization)
+        min_threshold: Minimum threshold to prevent over-predicting (default 0.4)
         
     Returns:
         Optimal threshold value
@@ -86,12 +87,15 @@ def optimize_threshold_for_recall(model, X_val, y_val, min_recall=0.55):
     # precision_recall_curve returns n+1 values, so we need to trim
     thresholds = np.append(thresholds, 1.0)
     
-    # Filter for thresholds meeting minimum recall requirement
-    valid_mask = recall >= min_recall
+    # Filter for thresholds meeting both requirements
+    valid_mask = (recall >= min_recall) & (thresholds >= min_threshold)
     
     if not valid_mask.any():
-        logger.warning(f"Could not find threshold with recall >= {min_recall}, using default 0.5")
-        return 0.5
+        # Fallback: just use min_recall constraint
+        valid_mask = recall >= min_recall
+        if not valid_mask.any():
+            logger.warning(f"Could not find threshold with recall >= {min_recall}, using default 0.5")
+            return 0.5
     
     # Calculate F1 scores for valid thresholds
     valid_precision = precision[valid_mask]
@@ -267,17 +271,22 @@ def train_pipeline(
         removed_features_path = MODELS_DIR / f"removed_features_{dataset_name}_{imbalance_method}.pkl"
         joblib.dump(removed_cols, removed_features_path)
         logger.info(f"Removed features list saved to {removed_features_path}")
+        
+        # Save scaler for inference (CRITICAL: must scale before feature engineering)
+        scaler_path = MODELS_DIR / "scaler.pkl"
+        joblib.dump(data_loader.scaler, scaler_path)
+        logger.info(f"Scaler saved to {scaler_path}")
 
-    # Step 7: Compare models and save results
-    logger.info("\n[Step 7/7] Comparing models and saving results...")
+    # Step 7: Save results and visualizations
+    logger.info("\n[Step 7/7] Saving results and visualizations...")
     results_df = pd.DataFrame(results)
     save_results_to_csv(results_df, f"results_{dataset_name}_{imbalance_method}.csv")
 
-    # Compare models
+    # Generate visualizations
     models_metrics = {row["model"]: row.to_dict() for _, row in results_df.iterrows()}
-    evaluator.compare_models(models_metrics)
+    evaluator.plot_metrics_chart(models_metrics)
 
-    # Compare ROC curves
+    # Plot ROC curve
     y_pred_probas = [model.predict_proba(X_test)[:, 1] for model in models.values()]
     model_names = [model.model_name for model in models.values()]
     evaluator.plot_roc_curves(y_test_array, y_pred_probas, model_names)
@@ -287,8 +296,8 @@ def train_pipeline(
     logger.info("=" * 80)
     logger.info(f"\nResults saved to: {REPORTS_DIR}")
     logger.info(f"Models saved to: {MODELS_DIR}")
-    logger.info("\nTop Model Performance:")
-    logger.info(results_df.sort_values("f1_score", ascending=False).to_string(index=False))
+    logger.info("\nModel Performance:")
+    logger.info(results_df.to_string(index=False))
 
 
 def main():

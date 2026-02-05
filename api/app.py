@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 # Load model at startup
 MODEL_PATH = Path(__file__).parent.parent / "models" / "random_forest_(balanced).pkl"
 REMOVED_FEATURES_PATH = Path(__file__).parent.parent / "models" / "removed_features_FD001_cost_sensitive.pkl"
+SCALER_PATH = Path(__file__).parent.parent / "models" / "scaler.pkl"
 
 
 class SensorData(BaseModel):
@@ -76,13 +77,14 @@ class HealthResponse(BaseModel):
 # Global model variable
 model = None
 removed_features = []
+scaler = None
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     """Manage application lifespan events."""
     # Startup
-    global model, removed_features
+    global model, removed_features, scaler
     try:
         if MODEL_PATH.exists():
             model = joblib.load(MODEL_PATH)
@@ -90,6 +92,16 @@ async def lifespan(app: FastAPI):
         else:
             logger.error(f"Model file not found at {MODEL_PATH}")
             model = None
+        
+        # Load scaler (CRITICAL: must scale before feature engineering)
+        if SCALER_PATH.exists():
+            scaler = joblib.load(SCALER_PATH)
+            logger.info(f"Scaler loaded successfully from {SCALER_PATH}")
+        else:
+            logger.error(f"Scaler not found at {SCALER_PATH}. Predictions may be inaccurate!")
+            scaler = None
+            model = None
+            raise RuntimeError("Scaler file missing; aborting startup to avoid invalid inference.")
             
         # Load removed features list
         if REMOVED_FEATURES_PATH.exists():
@@ -197,25 +209,26 @@ async def predict_failure(data: SensorData):
         
         df = pd.DataFrame(rows, columns=columns)
         
-        # Apply feature engineering (rolling mean/std/ema + degradation features)
+        # Step 1: Scale raw features FIRST (same as training pipeline)
+        if scaler is not None:
+            from src.config import FEATURE_CONFIG
+            columns_to_scale = (
+                FEATURE_CONFIG["operational_settings"] + FEATURE_CONFIG["sensor_measurements"]
+            )
+            columns_to_scale = [col for col in columns_to_scale if col in df.columns]
+            df[columns_to_scale] = scaler.transform(df[columns_to_scale])
+        
+        # Step 2: Remove constant features BEFORE feature engineering
+        if removed_features:
+            for col in removed_features:
+                if col in df.columns:
+                    df = df.drop(columns=[col])
+        
+        # Step 3: Apply feature engineering on scaled data
         feature_engineer = FeatureEngineer()
         df = feature_engineer.engineer_all_features(df)
         
-        # Remove low-variance features (same as training)
-        if removed_features:
-            # Expand to include all derived features (ema, rolling_mean, rolling_std, rate_of_change, cumsum, etc.)
-            cols_to_remove = []
-            for col in df.columns:
-                for removed in removed_features:
-                    if col == removed or col.startswith(f"{removed}_"):
-                        cols_to_remove.append(col)
-                        break
-            
-            if cols_to_remove:
-                df = df.drop(columns=cols_to_remove, errors="ignore")
-                logger.debug(f"Removed {len(cols_to_remove)} features (base + derived)")
-        
-        # Get the last time step (most recent) for prediction
+        # Step 4: Get the last time step (most recent) for prediction
         X = select_features_for_training(df.iloc[[-1]])
 
         # Make predictions

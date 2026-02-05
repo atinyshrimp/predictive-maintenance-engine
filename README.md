@@ -323,6 +323,61 @@ While the current system achieves 98-99% recall (catching virtually all failures
 9. Automated hyperparameter optimization
 10. Cost-benefit optimization framework
 
+---
+
+## 📊 Project Showcase
+
+### Model Comparison
+
+![Model Comparison](assets/model_comparison.png)
+*Comprehensive comparison of XGBoost and Random Forest across key metrics*
+
+### Performance Visualizations
+
+<table>
+<tr>
+<td width="50%">
+
+#### Confusion Matrix
+![Confusion Matrix](assets/confusion_matrix_random_forest_(balanced).png)
+*Random Forest: 98.3% recall with balanced confusion matrix*
+
+</td>
+<td width="50%">
+
+#### ROC Curve
+![ROC Curves](assets/roc_curves_comparison.png)
+*ROC-AUC 0.934 demonstrates excellent discrimination*
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+#### Precision-Recall Curve
+![Precision-Recall](assets/precision_recall_random_forest_(balanced).png)
+*Optimized for high recall in safety-critical maintenance*
+
+</td>
+<td width="50%">
+
+#### Feature Importance
+![Feature Importance](assets/feature_importance_random_forest_(balanced).png)
+*Top features: degradation patterns and rolling statistics*
+
+</td>
+</tr>
+</table>
+
+### Key Takeaways from Visualizations
+
+- **Confusion Matrix**: Shows 98.3% of failures correctly identified (high recall)
+- **ROC Curve**: 0.934 AUC indicates excellent model discrimination
+- **Precision-Recall**: Trade-off optimized for safety (prefer false alarms over missed failures)
+- **Feature Importance**: Degradation features (cycle_norm, rate_of_change) are top predictors
+
+---
+
 ## 🧪 Testing
 
 Run unit tests:

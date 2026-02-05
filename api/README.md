@@ -57,16 +57,19 @@ Check API and model status.
 
 **POST** `/predict`
 
-Predict failure probability for a single equipment unit.
+Predict failure probability for a single equipment unit using time-series sensor data.
 
 **Request Body:**
 
 ```json
 {
 	"unit_id": 1,
-	"sensor_values": [
-		0.5, 0.3, -0.2, 0.8, 1.2, -0.5, 0.1, 0.9, -0.3, 0.6, 0.4, -0.1, 0.7, 0.2,
-		-0.4, 1.0, 0.3, -0.2, 0.5, 0.8, 0.1
+	"time_steps": [
+		[0.5, 0.3, -0.2, 0.8, 1.2, -0.5, 0.1, 0.9, -0.3, 0.6, 0.4, -0.1, 0.7, 0.2, -0.4, 1.0, 0.3, -0.2, 0.5, 0.8, 0.1, 0.4, 0.6, -0.1, 0.8, 0.3, 0.5, 0.2, 0.9],
+		[0.6, 0.4, -0.1, 0.9, 1.3, -0.4, 0.2, 1.0, -0.2, 0.7, 0.5, 0.0, 0.8, 0.3, -0.3, 1.1, 0.4, -0.1, 0.6, 0.9, 0.2, 0.5, 0.7, 0.0, 0.9, 0.4, 0.6, 0.3, 1.0],
+		[0.7, 0.5, 0.0, 1.0, 1.4, -0.3, 0.3, 1.1, -0.1, 0.8, 0.6, 0.1, 0.9, 0.4, -0.2, 1.2, 0.5, 0.0, 0.7, 1.0, 0.3, 0.6, 0.8, 0.1, 1.0, 0.5, 0.7, 0.4, 1.1],
+		[0.8, 0.6, 0.1, 1.1, 1.5, -0.2, 0.4, 1.2, 0.0, 0.9, 0.7, 0.2, 1.0, 0.5, -0.1, 1.3, 0.6, 0.1, 0.8, 1.1, 0.4, 0.7, 0.9, 0.2, 1.1, 0.6, 0.8, 0.5, 1.2],
+		[0.9, 0.7, 0.2, 1.2, 1.6, -0.1, 0.5, 1.3, 0.1, 1.0, 0.8, 0.3, 1.1, 0.6, 0.0, 1.4, 0.7, 0.2, 0.9, 1.2, 0.5, 0.8, 1.0, 0.3, 1.2, 0.7, 0.9, 0.6, 1.3]
 	]
 }
 ```
@@ -74,7 +77,7 @@ Predict failure probability for a single equipment unit.
 **Parameters:**
 
 - `unit_id` (integer, required): Unique identifier for the equipment unit
-- `sensor_values` (array of floats, required): Sensor measurements (21+ values)
+- `time_steps` (array of arrays, required): Time-series sensor data with **minimum 5 time steps**. Each time step contains 29 values (3 operational settings + 26 sensor measurements)
 
 **Response:**
 
@@ -116,11 +119,11 @@ Predict failure probabilities for multiple equipment units.
 [
   {
     "unit_id": 1,
-    "sensor_values": [0.5, 0.3, -0.2, ...]
+    "time_steps": [[0.5, 0.3, ...], [0.6, 0.4, ...], [0.7, 0.5, ...], [0.8, 0.6, ...], [0.9, 0.7, ...]]
   },
   {
     "unit_id": 2,
-    "sensor_values": [0.2, 0.1, 0.4, ...]
+    "time_steps": [[0.2, 0.1, ...], [0.3, 0.2, ...], [0.4, 0.3, ...], [0.5, 0.4, ...], [0.6, 0.5, ...]]
   }
 ]
 ```
@@ -169,16 +172,25 @@ All endpoints return standard HTTP status codes and error messages:
 ```python
 import requests
 
-# Single prediction
+# Single prediction with time-series data (minimum 5 time steps)
+time_series_data = [
+    [0.5, 0.3, -0.2, 0.8, ...],  # Time step 1 (29 values)
+    [0.6, 0.4, -0.1, 0.9, ...],  # Time step 2
+    [0.7, 0.5, 0.0, 1.0, ...],   # Time step 3
+    [0.8, 0.6, 0.1, 1.1, ...],   # Time step 4
+    [0.9, 0.7, 0.2, 1.2, ...],   # Time step 5
+]
+
 response = requests.post(
     "http://localhost:8000/predict",
     json={
         "unit_id": 1,
-        "sensor_values": [0.5, 0.3, -0.2, 0.8, ...]
+        "time_steps": time_series_data
     }
 )
 result = response.json()
 print(f"Failure probability: {result['failure_probability']:.2%}")
+print(f"Risk level: {result['risk_level']}")
 ```
 
 ### cURL

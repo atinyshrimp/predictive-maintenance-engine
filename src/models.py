@@ -253,23 +253,27 @@ class ImbalanceHandler:
         return pd.DataFrame(X_resampled, columns=X_train.columns), pd.Series(y_resampled, name=y_train.name)
     
     @staticmethod
-    def calculate_scale_pos_weight(y_train: pd.Series) -> float:
+    def calculate_scale_pos_weight(y_train: pd.Series, multiplier: float = 1.5) -> float:
         """
         Calculate scale_pos_weight for XGBoost cost-sensitive learning.
+        
+        In predictive maintenance, false negatives (missing failures) are more costly
+        than false positives. Use multiplier > 1 to further prioritize recall.
 
         Args:
             y_train: Training labels
+            multiplier: Multiplier to increase weight (default 1.5 for maintenance)
 
         Returns:
             Calculated weight for positive class
         """
         n_negative = (y_train == 0).sum()
         n_positive = (y_train == 1).sum()
-        weight = n_negative / n_positive
+        weight = (n_negative / n_positive) * multiplier
 
         logger.info(
-            f"Calculated scale_pos_weight: {weight:.2f} "
-            f"(negative: {n_negative}, positive: {n_positive})"
+            f"Calculated scale_pos_weight: {weight:.2f} (base: {n_negative/n_positive:.2f}, "
+            f"multiplier: {multiplier}x) - negative: {n_negative}, positive: {n_positive}"
         )
         return weight
 

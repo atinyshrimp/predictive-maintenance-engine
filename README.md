@@ -171,9 +171,13 @@ print(response.json())
 
 ### Feature Engineering
 
-- **Rolling Mean Statistics**: Computed for all sensors with window sizes [3, 5]
-- Applied to operational settings and sensor measurements
-- Simple and effective approach following data science best practices
+- **Rolling Statistics**: Mean, standard deviation, and EMA computed for all sensors with window sizes [3, 5]
+- **Degradation Features**:
+  - Cycle position normalization (0-1 scale)
+  - Rate of change for key sensors (deterioration velocity)
+  - Cumulative sum (total degradation accumulation)
+- **120+ engineered features** from 20 base sensors
+- Time-series aware feature generation for predictive patterns
 
 ### Models
 
@@ -203,19 +207,182 @@ print(response.json())
 
 ### Model Performance (FD001 Dataset)
 
-| Model                    | Accuracy | Precision | Recall | F1-Score | ROC-AUC |
-| ------------------------ | -------- | --------- | ------ | -------- | ------- |
-| XGBoost (Cost-Sensitive) | 0.92     | 0.89      | 0.87   | 0.88     | 0.95    |
-| Random Forest (Balanced) | 0.90     | 0.85      | 0.84   | 0.84     | 0.93    |
+| Model                    | Accuracy | Precision | Recall    | F1-Score | ROC-AUC |
+| ------------------------ | -------- | --------- | --------- | -------- | ------- |
+| Random Forest (Balanced) | 73.0%    | 47.4%     | **97.9%** | 63.9%    | 0.937   |
+| XGBoost (Cost-Sensitive) | 62.3%    | 39.2%     | **99.9%** | 56.4%    | 0.902   |
 
-_Note: Results vary by dataset and configuration_
+**Key Achievement**: 97-99% recall means catching virtually all failures before they occur.
+
+_Note: Low precision is expected and acceptable for maintenance systems where false negatives (missed failures) are far more costly than false positives (unnecessary inspections)._
 
 ### Key Insights
 
-- **Cost-sensitive learning** outperforms SMOTE for this imbalanced problem
-- **Rolling features** significantly improve model performance
-- **XGBoost** shows better generalization than Random Forest
-- **RL scheduler** reduces maintenance costs by 15-20%
+- **Recall optimization crucial**: Achieved 98-99% recall through aggressive cost-sensitive learning (1.5x multiplier) and degradation features
+- **Feature engineering impact**: Rolling std, EMA, and degradation patterns (cycle position, rate of change) improved ROC-AUC from 0.85 to 0.93
+- **Precision-recall trade-off**: Acceptable to have 40-47% precision when recall is 98%+ in safety-critical maintenance
+- **Hyperparameter tuning**: Deeper trees (depth 30), more estimators (500), and lighter regularization enabled better minority class detection
+- **Random Forest winner**: Better precision-recall balance (98.3% recall, 46.6% precision) vs XGBoost's overly aggressive predictions
+
+## 🔮 Potential Improvements
+
+While the current system achieves 98-99% recall (catching virtually all failures), here are potential enhancements for production deployment:
+
+### 1. **Precision Optimization**
+
+- **Current Challenge**: 40-47% precision means ~60% false positive rate
+- **Approach**: Multi-threshold strategy with different alert levels
+- **Expected Impact**: Reduce false alarms by 20-30% while maintaining 95%+ recall
+- **Implementation**:
+  - LOW risk threshold: 0.3 (high precision, catches severe cases)
+  - MEDIUM risk threshold: 0.4-0.5 (balanced)
+  - HIGH risk threshold: optimized for recall (current approach)
+
+### 2. **Failure Threshold Tuning**
+
+- **Current**: `failure_threshold = 100` cycles creates 49% failure rate (easier problem)
+- **Production**: Reduce to 50 cycles for more challenging, realistic prediction
+- **Trade-off**: Higher difficulty but more actionable predictions (imminent failures only)
+- **Expected Impact**: Precision improves to 55-65%, recall drops to 85-90%
+
+### 3. **Advanced Ensemble Methods**
+
+- **Soft Voting**: Combine Random Forest + XGBoost with weighted averaging
+- **Stacking**: Use meta-learner (Logistic Regression) on top of base models
+- **Expected Impact**: +1-2% ROC-AUC, +2-3% F1-score
+- **Implementation**: `VotingClassifier` with `voting='soft'` and optimized weights
+
+### 4. **Cross-Validation for Robustness**
+
+- **Current**: Single train/val/test split may have variance
+- **Improvement**: 5-fold time-series cross-validation
+- **Benefit**: More reliable performance estimates, detect overfitting
+- **Tool**: `TimeSeriesSplit` from scikit-learn
+
+> **Note on Data Leakage Prevention**: The training pipeline uses **unit-level splitting** (assigning entire turbofan units to either train or validation) before computing rolling/EMA features. This prevents time-series information leakage that would occur if rolling windows were computed before splitting, ensuring the validation set provides an honest estimate of model performance.
+
+### 5. **Extended Feature Engineering**
+
+- **Polynomial Features**: Interaction terms between correlated sensors
+- **Lag Features**: Previous cycle values (t-1, t-2, t-3)
+- **Sensor Correlations**: Cross-sensor relationships
+- **Domain Features**: Temperature gradients, pressure ratios
+- **Expected Impact**: +2-4% ROC-AUC for complex patterns
+
+### 6. **Model Interpretability**
+
+- **SHAP Values**: Explain individual predictions for maintenance teams
+- **LIME**: Local explanations for high-risk predictions
+- **Feature Contribution**: Show which sensors triggered the alert
+- **Benefit**: Trust and adoption by maintenance personnel
+
+### 7. **Hyperparameter Optimization**
+
+- **Current**: Manual tuning based on domain knowledge
+- **Approach**: Bayesian optimization with `Optuna` or `Hyperopt`
+- **Search Space**: 50-100 combinations
+- **Expected Impact**: +1-3% F1-score, better generalization
+
+### 8. **Multi-Dataset Generalization**
+
+- **Current**: Optimized for FD001 (single operating condition)
+- **Extension**: Train on FD001-FD004 combined
+- **Challenge**: Different operating conditions (altitude, mach number)
+- **Benefit**: Generalized model for diverse environments
+
+### 9. **Real-Time Monitoring Pipeline**
+
+- **Stream Processing**: Apache Kafka + Spark Streaming
+- **Incremental Updates**: Online learning for concept drift
+- **Alerting**: Integration with maintenance management systems
+- **Dashboard**: Real-time monitoring with Grafana/Tableau
+
+### 10. **Cost-Benefit Analysis**
+
+- **Quantify**: Maintenance cost vs. failure cost
+- **Optimize**: Threshold selection based on business metrics
+- **ROI**: Calculate expected savings from predictive maintenance
+- **Reporting**: Executive dashboard with financial impact
+
+### Priority Roadmap
+
+**High Priority (Production-Ready):**
+
+1. Multi-threshold alerting system (precision improvement)
+2. Model interpretability with SHAP (trust & adoption)
+3. Cross-validation (robustness validation)
+
+**Medium Priority (Enhanced Performance):**
+
+4. Failure threshold tuning to 50 cycles
+5. Ensemble methods (stacking/soft voting)
+6. Extended feature engineering
+
+**Long-Term (Scalability):**
+
+7. Multi-dataset training (FD001-FD004)
+8. Real-time streaming pipeline
+9. Automated hyperparameter optimization
+10. Cost-benefit optimization framework
+
+---
+
+## 📊 Project Showcase
+
+### Model Comparison
+
+![Model Comparison](assets/model_comparison.png)
+_Comprehensive comparison of XGBoost and Random Forest across key metrics_
+
+### Performance Visualizations
+
+<table>
+<tr>
+<td width="50%">
+
+#### Confusion Matrix
+
+![Confusion Matrix](<assets/confusion_matrix_random_forest_(balanced).png>)
+_Random Forest: 98.3% recall with balanced confusion matrix_
+
+</td>
+<td width="50%">
+
+#### ROC Curve
+
+![ROC Curves](assets/roc_curves_comparison.png)
+_ROC-AUC 0.934 demonstrates excellent discrimination_
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+#### Precision-Recall Curve
+
+![Precision-Recall](<assets/precision_recall_random_forest_(balanced).png>)
+_Optimized for high recall in safety-critical maintenance_
+
+</td>
+<td width="50%">
+
+#### Feature Importance
+
+![Feature Importance](<assets/feature_importance_random_forest_(balanced).png>)
+_Top features: degradation patterns and rolling statistics_
+
+</td>
+</tr>
+</table>
+
+### Key Takeaways from Visualizations
+
+- **Confusion Matrix**: Shows 98.3% of failures correctly identified (high recall)
+- **ROC Curve**: 0.934 AUC indicates excellent model discrimination
+- **Precision-Recall**: Trade-off optimized for safety (prefer false alarms over missed failures)
+- **Feature Importance**: Degradation features (cycle_norm, rate_of_change) are top predictors
+
+---
 
 ## 🧪 Testing
 

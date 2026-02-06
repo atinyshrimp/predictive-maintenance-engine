@@ -13,7 +13,8 @@ import numpy as np
 import pandas as pd
 import uvicorn
 
-from src.feature_engineering import FeatureEngineer, select_features_for_training
+from src.feature_engineering import select_features_for_training
+from src.predict import load_preprocessing_artifacts, preprocess_for_prediction
 
 # Configure logging
 logging.basicConfig(
@@ -24,8 +25,6 @@ logger = logging.getLogger(__name__)
 
 # Load model at startup
 MODEL_PATH = Path(__file__).parent.parent / "models" / "random_forest_(balanced).pkl"
-REMOVED_FEATURES_PATH = Path(__file__).parent.parent / "models" / "removed_features_FD001_cost_sensitive.pkl"
-SCALER_PATH = Path(__file__).parent.parent / "models" / "scaler.pkl"
 
 
 class SensorData(BaseModel):
@@ -92,46 +91,21 @@ async def lifespan(_app: FastAPI):
         else:
             logger.error(f"Model file not found at {MODEL_PATH}")
             model = None
+            raise RuntimeError(f"Model file not found at {MODEL_PATH}")
         
-        # Load scaler (CRITICAL: must scale before feature engineering)
-        if SCALER_PATH.exists():
-            scaler = joblib.load(SCALER_PATH)
-            logger.info(f"Scaler loaded successfully from {SCALER_PATH}")
-        else:
-            logger.error(f"Scaler not found at {SCALER_PATH}. Predictions may be inaccurate!")
-            scaler = None
-            model = None
+        # Load preprocessing artifacts using shared function
+        scaler, removed_features = load_preprocessing_artifacts()
+        
+        if scaler is None:
             raise RuntimeError("Scaler file missing; aborting startup to avoid invalid inference.")
             
-        # Load removed features list
-        if REMOVED_FEATURES_PATH.exists():
-            removed_features = joblib.load(REMOVED_FEATURES_PATH)
-            logger.info(f"Removed features list loaded: {len(removed_features)} features to drop")
-        elif model is not None and hasattr(model, "feature_names_in_"):
-            # Derive removed features by comparing model's expected features with full feature set
-            model_features = set(model.feature_names_in_)
-            
-            # Build reference feature set (same columns as feature engineering pipeline)
-            base_cols = [f"operational_setting_{i}" for i in range(1, 4)]
-            base_cols += [f"sensor_measurement_{i}" for i in range(1, 27)]
-            
-            # Identify base features not used by the model (they were removed during training)
-            removed_features = [col for col in base_cols if col not in model_features]
-            
-            logger.warning(
-                f"Removed features file not found. Derived {len(removed_features)} removed features "
-                f"from model's feature_names_in_: {removed_features}"
-            )
-        else:
-            # Cannot safely determine removed features - fail fast to prevent train/inference mismatch
-            raise RuntimeError(
-                f"Removed features file not found at {REMOVED_FEATURES_PATH} and cannot derive "
-                "from model. Please ensure the removed_features file exists or retrain the model."
-            )
+        logger.info(f"Loaded scaler and {len(removed_features)} removed features")
+        
     except Exception as e:
         logger.exception(f"Error loading model or features: {e}")
         model = None
         removed_features = []
+        scaler = None
     
     yield
     
@@ -209,26 +183,10 @@ async def predict_failure(data: SensorData):
         
         df = pd.DataFrame(rows, columns=columns)
         
-        # Step 1: Scale raw features FIRST (same as training pipeline)
-        if scaler is not None:
-            from src.config import FEATURE_CONFIG
-            columns_to_scale = (
-                FEATURE_CONFIG["operational_settings"] + FEATURE_CONFIG["sensor_measurements"]
-            )
-            columns_to_scale = [col for col in columns_to_scale if col in df.columns]
-            df[columns_to_scale] = scaler.transform(df[columns_to_scale])
+        # Use shared preprocessing pipeline (scale -> remove features -> engineer)
+        df = preprocess_for_prediction(df, scaler, removed_features)
         
-        # Step 2: Remove constant features BEFORE feature engineering
-        if removed_features:
-            for col in removed_features:
-                if col in df.columns:
-                    df = df.drop(columns=[col])
-        
-        # Step 3: Apply feature engineering on scaled data
-        feature_engineer = FeatureEngineer()
-        df = feature_engineer.engineer_all_features(df)
-        
-        # Step 4: Get the last time step (most recent) for prediction
+        # Get the last time step (most recent) for prediction
         X = select_features_for_training(df.iloc[[-1]])
 
         # Make predictions

@@ -11,23 +11,13 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.config import NOTEBOOK_BASELINE
+from src.predict import load_preprocessing_artifacts, preprocess_for_prediction
 
 # Paths
 MODELS_DIR = PROJECT_ROOT / "models"
 ASSETS_DIR = PROJECT_ROOT / "assets"
 DATA_DIR = PROJECT_ROOT / "data"
 REPORTS_DIR = PROJECT_ROOT / "reports"
-
-# Default removed features for FD001
-DEFAULT_REMOVED_FEATURES = [
-    'operational_setting_3',
-    'sensor_measurement_1',
-    'sensor_measurement_5',
-    'sensor_measurement_10',
-    'sensor_measurement_16',
-    'sensor_measurement_18',
-    'sensor_measurement_19',
-]
 
 
 def load_model(model_name: str = "random_forest_(balanced).pkl"):
@@ -39,19 +29,15 @@ def load_model(model_name: str = "random_forest_(balanced).pkl"):
 
 
 def load_removed_features(dataset: str = "FD001", method: str = "cost_sensitive"):
-    """Load removed features list or return defaults."""
-    features_path = MODELS_DIR / f"removed_features_{dataset}_{method}.pkl"
-    if features_path.exists():
-        return joblib.load(features_path)
-    return DEFAULT_REMOVED_FEATURES
+    """Load removed features list using shared function."""
+    _, removed_features = load_preprocessing_artifacts(dataset, method)
+    return removed_features
 
 
 def load_scaler():
-    """Load the fitted scaler for feature normalization."""
-    scaler_path = MODELS_DIR / "scaler.pkl"
-    if scaler_path.exists():
-        return joblib.load(scaler_path)
-    return None
+    """Load the fitted scaler using shared function."""
+    scaler, _ = load_preprocessing_artifacts()
+    return scaler
 
 
 def load_results():
@@ -131,36 +117,16 @@ def prepare_features_for_prediction(df: pd.DataFrame, removed_features: list):
     """
     Apply scaling, feature engineering, and remove low-variance features.
     
-    CRITICAL: Must match training pipeline exactly:
-    1. Scale raw sensor data FIRST
-    2. Remove constant features
-    3. Apply feature engineering on scaled data
+    Uses shared preprocessing pipeline from src/predict.py to ensure consistency.
     """
-    from src.feature_engineering import FeatureEngineer
-    from src.config import FEATURE_CONFIG
-    
-    df = df.copy()
-    
-    # Step 1: Scale raw features FIRST (same as training pipeline)
+    # Load scaler
     scaler = load_scaler()
-    if scaler is not None:
-        columns_to_scale = (
-            FEATURE_CONFIG["operational_settings"] + FEATURE_CONFIG["sensor_measurements"]
-        )
-        columns_to_scale = [col for col in columns_to_scale if col in df.columns]
-        df[columns_to_scale] = scaler.transform(df[columns_to_scale])
     
-    # Step 2: Remove constant features BEFORE feature engineering
-    for col in removed_features:
-        if col in df.columns:
-            df = df.drop(columns=[col])
+    # Use shared preprocessing function
+    df_processed = preprocess_for_prediction(df, scaler, removed_features)
     
-    # Step 3: Apply feature engineering on scaled data
-    fe = FeatureEngineer()
-    df_engineered = fe.engineer_all_features(df)
-    
-    # Step 4: Remove non-feature columns
-    X = df_engineered.drop(columns=["unit_number", "time_in_cycles", "RUL", "failure"], errors="ignore")
+    # Remove non-feature columns
+    X = df_processed.drop(columns=["unit_number", "time_in_cycles", "RUL", "failure"], errors="ignore")
     
     return X
 

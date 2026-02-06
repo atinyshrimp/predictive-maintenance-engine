@@ -38,6 +38,7 @@ setup(
         "joblib>=1.3.0",
         "matplotlib>=3.7.0",
         "seaborn>=0.12.0",
+        "plotly>=5.14.0",
         "requests>=2.30.0",
         "streamlit>=1.25.0",
         "fastapi>=0.100.0",
@@ -52,9 +53,6 @@ setup(
             "pytest>=7.4.0",
             "pytest-cov>=4.1.0",
             "pdoc3>=0.10.0",
-        ],
-        "viz": [
-            "plotly>=5.14.0",
         ],
     },
     entry_points={

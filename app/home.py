@@ -1,6 +1,7 @@
 """Home page for Predictive Maintenance Engine."""
 
 import streamlit as st
+import requests
 from utils import load_model, load_results
 
 st.title("🔧 Predictive Maintenance Engine")
@@ -12,10 +13,11 @@ for predicting industrial equipment failures using the NASA Turbofan dataset.
 """)
 
 # Status indicators
-col1, col2, _ = st.columns(3)
+col1, col2, col3 = st.columns(3)
 
 with col1:
-    model = load_model()
+    with st.spinner("Loading model..."):
+        model = load_model()
     if model:
         st.success("✅ Model Ready")
     else:
@@ -28,6 +30,19 @@ with col2:
         st.success(f"🎯 {recall:.0%} Recall")
     else:
         st.info("📊 Not trained")
+        
+with col3:
+    with st.spinner("Checking API..."):
+        try:
+            response = requests.get("http://localhost:8000/health")
+            st.session_state.is_api_running = response.status_code == 200
+        except requests.RequestException:
+            st.session_state.is_api_running = False
+
+    if st.session_state.get("is_api_running"):
+        st.success("🚀 API Running")
+    else:        
+        st.warning("⚠️ API Offline")
 
 st.markdown("---")
 
@@ -37,17 +52,20 @@ st.subheader("📍 Navigation")
 col1, col2, col3 = st.columns(3)
 with col1:
     st.markdown("""
-    **🔮 Predictions**  
+    **🔮 Predictions**
+
     Interactive failure prediction with timeline analysis
     """)
 with col2:
     st.markdown("""
-    **📊 Performance**  
+    **📊 Performance**
+
     Model metrics, confusion matrix, ROC curves
     """)
 with col3:
     st.markdown(""" 
     **ℹ️ About**
+    
     Technical details and documentation
     """)  # noqa: RUF001
 

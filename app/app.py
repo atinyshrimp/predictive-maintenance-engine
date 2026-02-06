@@ -77,8 +77,8 @@ with st.sidebar:
     
     # Links
     st.markdown("**🔗 Links**")
-    st.markdown("""
-    - [API Docs](http://localhost:8000/docs)
+    st.markdown(f"""
+    {"- [API Docs](http://localhost:8000/docs)" if st.session_state.get("is_api_running") else "- API Docs (start API to access)"}
     - [GitHub](https://github.com/atinyshrimp/predictive-maintenance-engine)
     """)
     

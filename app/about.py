@@ -64,7 +64,9 @@ Industrial equipment failures cause:
 ### 📚 References
 
 - [NASA C-MAPSS Dataset](https://www.nasa.gov/content/prognostics-center-of-excellence-data-set-repository)
-- Saxena & Goebel (2008). Turbofan Engine Degradation Simulation
+- A. Saxena, K. Goebel, D. Simon, and N. Eklund, “Damage Propagation Modeling
+for Aircraft Engine Run-to-Failure Simulation.” https://data.nasa.gov/Aerospace/CMAPSS-Jet-Engine-Simulated-Data/ff5v-kuh6/about_data, oct 2008. Accessed: 2024-
+12-31
 
 ---
 

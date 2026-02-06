@@ -7,7 +7,7 @@ from pathlib import Path
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from utils import load_results, get_delta_results, ASSETS_DIR
+from utils import load_results, get_delta_results, ASSETS_DIR, NOTEBOOK_BASELINE
 
 st.title("📊 Model Performance")
 
@@ -48,7 +48,7 @@ with col5:
     st.metric("Accuracy", f"{model_data['accuracy']:.1%}",
               delta=f"{delta_acc:+.1f}%", delta_color="off")
 
-st.caption(f"📊 Δ vs. original notebook baseline (K-Neighbors/TPOT) • ROC-AUC improved from 0.48 (random) to {model_data['roc_auc']:.2f}")
+st.caption(f"📊 Δ vs. original notebook baseline (K-Neighbors/TPOT) • ROC-AUC improved from {NOTEBOOK_BASELINE['roc_auc']:.2f} (random) to {model_data['roc_auc']:.2f}")
 
 # Decision threshold if available
 threshold = model_data.get('threshold')
@@ -125,8 +125,8 @@ st.markdown("---")
 
 # Collapsible sections for details
 with st.expander("📚 Why Low Precision is Acceptable"):
-    st.markdown("""
-    ~43% precision = ~57% of alerts are false alarms. This is intentional:
+    st.markdown(f"""
+    ~{model_data['precision']:.1%} precision = ~{(1 - model_data['precision']):.1%} of alerts are false alarms. This is intentional:
     
     | Scenario | Estimated Cost |
     |----------|----------------|
@@ -141,23 +141,25 @@ with st.expander("📥 Export Results"):
     st.download_button("Download CSV", csv, "model_results.csv", "text/csv")
 
 with st.expander("📈 Comparison to Original Notebook"):
-    st.markdown("""
+    if metrics_delta is not None:
+        st.markdown(f"""
     **Original Notebook (TPOT AutoML → K-Neighbors):**
     
     | Metric | Notebook | Current | Change |
     |--------|----------|---------|--------|
-    | Recall | 95.2% | 97.9% | **+2.7%** |
-    | Precision | 99.5% | 43.3% | -56.2% |
-    | ROC-AUC | 0.48 | 0.96 | **+0.48** |
+    | Recall | {NOTEBOOK_BASELINE['recall']:.1%} | {model_data['recall']:.1%} | **+{metrics_delta['recall']:.1%}** |
+    | Precision | {NOTEBOOK_BASELINE['precision']:.1%} | {model_data['precision']:.1%} | **{metrics_delta['precision']:.1%}** |
+    | ROC-AUC | {NOTEBOOK_BASELINE['roc_auc']:.2f} | {model_data['roc_auc']:.2f} | **+{metrics_delta['roc_auc']:.2f}** |
     
     **Why the current model is actually better:**
     
     The original notebook model had **zero true positives** - it simply predicted "no failure" 
     for everything, achieving high accuracy from class imbalance (95% healthy readings).
     
-    - 🔴 **ROC-AUC 0.48** = Worse than random guessing!
-    - 🟢 **ROC-AUC 0.96** = Excellent discrimination ability
+    - 🔴 **ROC-AUC {NOTEBOOK_BASELINE['roc_auc']:.2f}** = Worse than random guessing!
+    - 🟢 **ROC-AUC {model_data['roc_auc']:.2f}** = Excellent discrimination ability
     
     The current model intentionally trades precision for recall because missing a failure 
     costs ~200x more than a false alarm in industrial maintenance.
-    """)
+    """
+)

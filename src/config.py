@@ -87,6 +87,13 @@ LOG_CONFIG = {
     },
 }
 
+RISK_LEVELS = {
+    "LOW": {"color": "#28a745", "recommendation": "Continue normal operations."},
+    "MEDIUM": {"color": "#ffc107", "recommendation": "Schedule maintenance inspection."},
+    "HIGH": {"color": "#fd7e14", "recommendation": "Schedule immediate maintenance."},
+    "CRITICAL": {"color": "#dc3545", "recommendation": "URGENT: Emergency maintenance required!"},
+}
+
 NOTEBOOK_BASELINE = {
     "recall": 0.9520464263897374,
     "precision": 0.9948470096735572,

@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 import joblib
 
-from src.config import LOG_CONFIG, MODELS_DIR, FEATURE_CONFIG, ensure_directories
+from src.config import LOG_CONFIG, MODELS_DIR, FEATURE_CONFIG, RISK_LEVELS, ensure_directories
 from src.data_loader import TurbofanDataLoader
 from src.feature_engineering import FeatureEngineer, select_features_for_training
 from src.reinforcement_learning import MaintenanceScheduler
@@ -195,6 +195,50 @@ def predict_with_scheduler(
     return results_df
 
 
+def get_risk_level(probability: float) -> tuple:
+    """Get risk level and color based on failure probability."""
+    risk_level = None
+    if probability < 0.3:
+        risk_level = "LOW"
+    elif probability < 0.5:
+        risk_level = "MEDIUM"
+    elif probability < 0.75:
+        risk_level = "HIGH"
+    else:
+        risk_level = "CRITICAL"
+
+    return risk_level, RISK_LEVELS[risk_level]["color"], RISK_LEVELS[risk_level]["recommendation"]
+
+
+def make_predictions(model, data: pd.DataFrame) -> tuple[float, bool, str, str]:
+    """Make predictions and provide recommendations based on failure probability.
+    Args:
+        model: Trained predictive maintenance model
+        data: Preprocessed data for prediction
+        
+    Returns:
+        Tuple containing:
+        - failure probability (float)
+        - binary failure prediction (bool)
+        - risk level (str)
+        - maintenance recommendation (str)
+    """
+    
+    probability = model.predict_proba(data)[0][1]
+    prediction = model.predict(data)[0]
+    result = (probability, bool(prediction))
+    risk_level = None
+    
+    if probability < 0.3:
+        risk_level = "LOW"
+    elif probability < 0.5:
+        risk_level = "MEDIUM"
+    elif probability < 0.75:
+        risk_level = "HIGH"
+    else:
+        risk_level = "CRITICAL"
+
+    return result + (risk_level, RISK_LEVELS[risk_level]["recommendation"])
 def main():
     """Command-line interface for prediction."""
     parser = argparse.ArgumentParser(

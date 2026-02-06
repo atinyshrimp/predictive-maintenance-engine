@@ -11,7 +11,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.config import NOTEBOOK_BASELINE
-from src.predict import load_preprocessing_artifacts, preprocess_for_prediction
+from src.predict import load_preprocessing_artifacts, preprocess_for_prediction, get_risk_level
 
 # Paths
 MODELS_DIR = PROJECT_ROOT / "models"
@@ -50,21 +50,9 @@ def load_results():
     return None
 
 
-def get_risk_level(probability: float) -> tuple:
-    """Get risk level and color based on failure probability."""
-    if probability < 0.3:
-        return "LOW", "#28a745", "Continue normal operations."
-    elif probability < 0.5:
-        return "MEDIUM", "#ffc107", "Schedule maintenance inspection."
-    elif probability < 0.75:
-        return "HIGH", "#fd7e14", "Schedule immediate maintenance."
-    else:
-        return "CRITICAL", "#dc3545", "URGENT: Emergency maintenance required!"
-
-
 def create_gauge_chart(probability: float, title: str = "Failure Probability"):
     """Create a gauge chart for failure probability."""
-    risk_level, color, _ = get_risk_level(probability)
+    _, color, _ = get_risk_level(probability)
     
     fig = go.Figure(go.Indicator(
         mode="gauge+number+delta",

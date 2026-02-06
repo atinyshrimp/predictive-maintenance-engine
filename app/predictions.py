@@ -17,8 +17,9 @@ from utils import (
     prepare_features_for_prediction,
     create_gauge_chart,
     create_prediction_timeline_chart,
-    get_risk_level,
 )
+from src.predict import make_predictions, get_risk_level
+from src.config import MODEL_CONFIG
 
 st.title("🔮 Failure Predictions")
 st.markdown("Analyze equipment degradation patterns and predict failures")
@@ -125,8 +126,7 @@ if input_method == "📊 Sample Data (Test Set)":
                         X_pred = X.iloc[[-1]]
                         
                         # Predict
-                        probability = float(model.predict_proba(X_pred)[0][1])
-                        prediction = bool(model.predict(X_pred)[0])
+                        probability, prediction, risk_level, recommendation = make_predictions(model, X_pred)
                         
                         # Display results
                         st.markdown("---")
@@ -138,9 +138,7 @@ if input_method == "📊 Sample Data (Test Set)":
                             fig = create_gauge_chart(probability, f"Unit {selected_unit} @ Cycle {prediction_cycle}")
                             st.plotly_chart(fig, width="stretch")
                         
-                        with col2:
-                            risk_level, color, recommendation = get_risk_level(probability)
-                            
+                        with col2:                            
                             st.metric("Failure Probability", f"{probability:.1%}")
                             st.metric("Risk Level", risk_level)
                             st.metric("Prediction Cycle", f"{prediction_cycle} / {total_cycles}")
@@ -164,18 +162,18 @@ if input_method == "📊 Sample Data (Test Set)":
                             col1, col2, col3 = st.columns(3)
                             with col1:
                                 st.metric("Model Prediction", 
-                                         "⚠️ Failure Risk" if probability > 0.5 else "✅ Normal")
+                                         "⚠️ Failure Risk" if prediction else "✅ Normal")
                             with col2:
                                 st.metric("Actual Cycles Remaining", f"{cycles_remaining}")
                             with col3:
                                 # Check if model was correct (failure = <100 cycles remaining)
-                                actually_failing = cycles_remaining < 100
-                                model_correct = (probability > 0.5) == actually_failing
+                                actually_failing = cycles_remaining < MODEL_CONFIG['failure_threshold']
+                                model_correct = prediction == actually_failing
                                 st.metric("Model Accuracy", "✅ Correct" if model_correct else "❌ Incorrect")
                             
-                            if cycles_remaining < 100:
+                            if cycles_remaining < MODEL_CONFIG['failure_threshold']:
                                 st.warning(f"🔴 This engine will fail within {cycles_remaining} cycles "
-                                          f"(threshold: 100 cycles)")
+                                          f"(threshold: {MODEL_CONFIG['failure_threshold']} cycles)")
                             else:
                                 st.success(f"🟢 This engine has {cycles_remaining} cycles remaining "
                                           f"before failure")
@@ -330,7 +328,7 @@ elif input_method == "✏️ Manual Input":
                     X = prepare_features_for_prediction(df, removed_features)
                     X_pred = X.iloc[[-1]]
                     
-                    probability = float(model.predict_proba(X_pred)[0][1])
+                    probability, prediction, risk_level, recommendation = make_predictions(model, X_pred)
                     
                     # Display
                     st.markdown("---")
@@ -341,7 +339,6 @@ elif input_method == "✏️ Manual Input":
                         st.plotly_chart(fig, width="stretch")
                     
                     with col2:
-                        risk_level, color, recommendation = get_risk_level(probability)
                         st.metric("Failure Probability", f"{probability:.1%}")
                         st.metric("Risk Level", risk_level)
                         
@@ -414,7 +411,7 @@ elif input_method == "📁 Upload CSV":
                         X = prepare_features_for_prediction(window_data, removed_features)
                         X_pred = X.iloc[[-1]]
                         
-                        probability = float(model.predict_proba(X_pred)[0][1])
+                        probability, prediction, risk_level, recommendation = make_predictions(model, X_pred)
                         
                         st.markdown("---")
                         col1, col2 = st.columns([1, 1])
@@ -424,7 +421,6 @@ elif input_method == "📁 Upload CSV":
                             st.plotly_chart(fig, width="stretch")
                         
                         with col2:
-                            risk_level, color, recommendation = get_risk_level(probability)
                             st.metric("Failure Probability", f"{probability:.1%}")
                             st.metric("Risk Level", risk_level)
                             st.metric("Analyzed Cycle", f"{prediction_cycle} / {total_cycles}")

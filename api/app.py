@@ -14,7 +14,7 @@ import pandas as pd
 import uvicorn
 
 from src.feature_engineering import select_features_for_training
-from src.predict import load_preprocessing_artifacts, preprocess_for_prediction
+from src.predict import load_preprocessing_artifacts, preprocess_for_prediction, make_predictions
 
 # Configure logging
 logging.basicConfig(
@@ -190,22 +190,7 @@ async def predict_failure(data: SensorData):
         X = select_features_for_training(df.iloc[[-1]])
 
         # Make predictions
-        failure_probability = float(model.predict_proba(X)[0][1])
-        failure_prediction = bool(model.predict(X)[0])
-
-        # Determine risk level and recommendation
-        if failure_probability < 0.3:
-            risk_level = "LOW"
-            recommendation = "Continue normal operations. Monitor regularly."
-        elif failure_probability < 0.5:
-            risk_level = "MEDIUM"
-            recommendation = "Schedule maintenance inspection within next cycle."
-        elif failure_probability < 0.75:
-            risk_level = "HIGH"
-            recommendation = "Schedule immediate maintenance. Increase monitoring frequency."
-        else:
-            risk_level = "CRITICAL"
-            recommendation = "URGENT: Schedule emergency maintenance immediately. Consider equipment shutdown."
+        failure_probability, failure_prediction, risk_level, recommendation = make_predictions(model, X)        
 
         logger.info(
             f"Prediction for unit {data.unit_id}: "

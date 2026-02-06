@@ -6,6 +6,7 @@ Multi-page Streamlit application
 import streamlit as st
 from pathlib import Path
 import sys
+from datetime import datetime
 
 # Add project root to path for imports
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -86,6 +87,6 @@ with st.sidebar:
     
     # Footer
     st.markdown("---")
-    st.caption("Built by Joyce Lapilus • 2025")
+    st.caption(f"© {datetime.now().year} Predictive Maintenance Engine • Developed by [atinyshrimp](https://github.com/atinyshrimp)")
 
 pg.run()

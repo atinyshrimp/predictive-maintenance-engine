@@ -72,6 +72,5 @@ for Aircraft Engine Run-to-Failure Simulation.” https://data.nasa.gov/Aerospac
 
 ### 👤 Author
 
-**Joyce Lapilus**  
 [GitHub](https://github.com/atinyshrimp) · [LinkedIn](https://linkedin.com/in/joyce-lapilus)
 """)

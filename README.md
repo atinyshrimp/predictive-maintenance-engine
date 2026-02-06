@@ -16,6 +16,7 @@ This predictive maintenance system uses sensor data to forecast equipment failur
 - **Random Forest Model**: Balanced class weights with threshold optimization
 - **Reinforcement Learning**: Q-learning based maintenance scheduling optimization
 - **REST API**: Production-ready FastAPI deployment
+- **Interactive Web App**: Real-time predictions and analytics dashboard with Streamlit
 
 ## 🏗️ Architecture
 
@@ -23,6 +24,13 @@ This predictive maintenance system uses sensor data to forecast equipment failur
 predictive-maintenance-engine/
 ├── api/                          # REST API for model inference
 │   └── app.py                    # FastAPI application
+├── app/                          # Streamlit web application
+│   ├── app.py                    # Main app entry point
+│   ├── home.py                   # Home page
+│   ├── predictions.py            # Interactive predictions
+│   ├── performance.py            # Model performance dashboard
+│   ├── about.py                  # Project documentation
+│   └── utils.py                  # App utility functions
 ├── src/                          # Source code modules
 │   ├── __init__.py
 │   ├── config.py                 # Configuration management
@@ -122,6 +130,23 @@ python src/predict.py \
     --output data/predictions.csv
 ```
 
+### Running the Web App
+
+Launch the interactive Streamlit dashboard:
+
+```bash
+streamlit run app/app.py
+```
+
+The web app will open at **http://localhost:8501** with:
+
+- 🏠 **Home**: Project overview and system status
+- 🔮 **Predictions**: Interactive failure prediction with real-time sensor input
+- 📊 **Performance**: Model metrics, confusion matrix, ROC curves
+- ℹ️ **About**: Detailed project documentation
+
+**Live Demo**: [View on Streamlit Cloud](https://your-app.streamlit.app) _(after deployment)_
+
 ### Running the API
 
 Start the FastAPI server:
@@ -160,6 +185,16 @@ print(response.json())
 ```
 
 ## 📈 Features
+
+### Web Application (Streamlit)
+
+- **Interactive Dashboard**: Real-time predictions with intuitive UI
+- **Unit Selection**: Choose from 100 test engines
+- **Timeline Analysis**: See failure probability evolution over engine lifecycle
+- **Risk Assessment**: Color-coded alerts (Low/Medium/High/Critical)
+- **Gauge Charts**: Visual failure probability indicators
+- **Performance Metrics**: Live model performance tracking
+- **Responsive Design**: Mobile-friendly interface
 
 ### Data Processing
 
@@ -213,7 +248,7 @@ print(response.json())
 
 **Key Achievement**: ~98% recall means catching virtually all failures before they occur.
 
-_Note: Low precision is expected and acceptable for maintenance systems where false negatives (missed failures) are far more costly than false positives (unnecessary inspections)._
+> _**Note**: Low precision is expected and acceptable for maintenance systems where false negatives (missed failures) are far more costly than false positives (unnecessary inspections)._
 
 ### Key Insights
 
@@ -258,7 +293,7 @@ While the current system achieves 98-99% recall (catching virtually all failures
 - **Benefit**: More reliable performance estimates, detect overfitting
 - **Tool**: `TimeSeriesSplit` from scikit-learn
 
-> **Note on Data Leakage Prevention**: The training pipeline uses **unit-level splitting** (assigning entire turbofan units to either train or validation) before computing rolling/EMA features. This prevents time-series information leakage that would occur if rolling windows were computed before splitting, ensuring the validation set provides an honest estimate of model performance.
+> _**Note on Data Leakage Prevention**: The training pipeline uses **unit-level splitting** (assigning entire turbofan units to either train or validation) before computing rolling/EMA features. This prevents time-series information leakage that would occur if rolling windows were computed before splitting, ensuring the validation set provides an honest estimate of model performance._
 
 ### 5. **Extended Feature Engineering**
 
@@ -447,18 +482,32 @@ docker build -t predictive-maintenance .
 docker run -p 8000:8000 predictive-maintenance
 ```
 
-### Cloud Deployment
+> _**Not Implemented Yet**_
+
+### Streamlit Cloud (Web App)
+
+Deploy the Streamlit app for free:
+
+1. Push code to GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io)
+3. Connect your repository
+4. Set **Main file path**: `app/app.py`
+5. Deploy! Auto-updates on every push to main
+
+### Cloud Deployment (API)
 
 - **AWS**: Deploy with EC2 + ECS or Lambda
 - **GCP**: Use Cloud Run or App Engine
 - **Azure**: Deploy with App Service or Container Instances
 
-See [deployment/](deployment/) for detailed guides.
+> _**Not Implemented Yet**_
 
 ## 📚 References
 
 - [NASA Turbofan Engine Dataset](https://www.nasa.gov/content/prognostics-center-of-excellence-data-set-repository)
-- Saxena, A., & Goebel, K. (2008). Turbofan Engine Degradation Simulation Data Set. NASA Ames Prognostics Data Repository
+- A. Saxena, K. Goebel, D. Simon, and N. Eklund, “Damage Propagation Modeling
+  for Aircraft Engine Run-to-Failure Simulation.” https://data.nasa.gov/Aerospace/CMAPSS-Jet-Engine-Simulated-Data/ff5v-kuh6/about_data, oct 2008. Accessed: 2024-
+  12-31
 - Imbalanced Learning: [imbalanced-learn documentation](https://imbalanced-learn.org/)
 
 ## 🤝 Contributing
@@ -473,17 +522,3 @@ Contributions are welcome! Please:
 ## 📄 License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
-
-## 👤 Author
-
-**Joyce Lapilus**
-
-- GitHub: [@atinyshrimp](https://github.com/atinyshrimp)
-- LinkedIn: [Joyce Lapilus](https://linkedin.com/in/joyce-lapilus)
-- Email: joyce.lapilus@gmail.com
-
-## 🙏 Acknowledgments
-
-- NASA PCoE for providing the turbofan engine dataset
-- Scikit-learn community
-- FastAPI framework developers

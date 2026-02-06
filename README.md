@@ -1,22 +1,29 @@
-# Predictive Maintenance Engine
+# 🏭 Predictive Maintenance Engine
 
-[![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/)
+[![License](https://img.shields.io/github/license/atinyshrimp/predictive-maintenance-engine?style=for-the-badge)](LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge)](https://github.com/psf/black)
 
-A production-ready machine learning system for predicting industrial equipment failures using the NASA Turbofan Jet Engine dataset. This project demonstrates end-to-end ML pipeline development, from data preprocessing to model deployment with a REST API.
+A production-style machine learning system for predicting industrial equipment failures using the NASA Turbofan Jet Engine dataset.
 
-## 🎯 Project Overview
+This project demonstrates an end-to-end ML pipeline: from time-series feature engineering and imbalanced learning to decision optimization and deployment via API and interactive dashboard.
 
-This predictive maintenance system uses sensor data to forecast equipment failures, enabling proactive maintenance scheduling and reducing downtime costs. The project implements:
+## 🎯 Key Result
 
-- **Binary Classification**: Predicting failure vs. non-failure states
-- **Imbalanced Learning**: Handling class imbalance with SMOTE, undersampling, and cost-sensitive learning
-- **Feature Engineering**: Time-series rolling statistics with window sizes [3, 5]
-- **Random Forest Model**: Balanced class weights with threshold optimization
-- **Reinforcement Learning**: Q-learning based maintenance scheduling optimization
-- **REST API**: Production-ready FastAPI deployment
-- **Interactive Web App**: Real-time predictions and analytics dashboard with Streamlit
+**The model detects ~98% of failures before they occur (high recall)** with ROC-AUC ≈ 0.95, demonstrating strong ability to rank high-risk engines ahead of failure.
+
+In predictive maintenance, missing a failure is far more costly than triggering a false alarm; therefore the system is optimized for **failure detection rather than raw accuracy**.
+
+## 📌 Why This Project Matters
+
+Industrial predictive maintenance is a real-world ML problem where:
+
+- Data is **highly imbalanced**
+- Accuracy can be misleading
+- Decision thresholds matter more than model choice
+- Cost of false negatives >> false positives
+
+This project focuses on **engineering a reliable decision system**, not just training a classifier.
 
 ## 🏗️ Architecture
 
@@ -64,7 +71,7 @@ predictive-maintenance-engine/
 - **Source**: [NASA PCoE Datasets](https://www.nasa.gov/content/prognostics-center-of-excellence-data-set-repository)
 - **Description**: Run-to-failure simulation data from turbofan engines
 - **Features**: 21 sensor measurements + 3 operational settings
-- **Target**: Remaining Useful Life (RUL) → Binary failure classification
+- **Target**: Remaining Useful Life (RUL) → converted to binary failure classification using a failure horizon threshold
 - **Splits**: FD001, FD002, FD003, FD004 (different operating conditions)
 
 ## 🚀 Quick Start
@@ -217,7 +224,7 @@ print(response.json())
 ### Model
 
 - **Random Forest**: Ensemble method with balanced class weights
-- Threshold optimization for recall
+- Decision-threshold optimization to maximize recall under class imbalance
 - Comprehensive hyperparameter configurations
 - Pipeline-based training for reproducibility
 
@@ -232,19 +239,27 @@ print(response.json())
 
 ### Reinforcement Learning
 
-- Q-Learning based maintenance scheduler
-- State space: healthy → moderate wear → severe wear → failed
-- Action space: no maintenance, maintenance
-- Reward structure considering maintenance and failure costs
-- Trained over 1000 episodes with epsilon=0.2
+Reinforcement learning is used to **optimize maintenance decisions**, not to replace the predictive model.
+
+The Q-learning agent uses predicted failure probability and engine health state to learn when maintenance should be performed, balancing:
+
+- Failure risk
+- Maintenance cost
+- Downtime penalties
+
+This demonstrates how ML predictions can be integrated into a decision-making system rather than used in isolation.
 
 ## 📊 Results
+
+From an operational perspective, high recall significantly reduces catastrophic failures, which are typically far more expensive than preventive inspections triggered by false positives.
+
+In real industrial settings, preventing a single catastrophic engine failure can outweigh the cost of dozens of preventive inspections, making recall the dominant optimization objective.
 
 ### Model Performance (FD001 Dataset)
 
 | Model                    | Accuracy | Precision | Recall    | F1-Score | ROC-AUC |
 | ------------------------ | -------- | --------- | --------- | -------- | ------- |
-| Random Forest (Balanced) | 79.3%    | 43.3%     | **97.9%** | 60.0%    | 0.959   |
+| Random Forest (Balanced) | 74.9%    | 43.8%     | **98.1%** | 60.6%    | 0.945   |
 
 **Key Achievement**: ~98% recall means catching virtually all failures before they occur.
 
@@ -253,10 +268,85 @@ print(response.json())
 ### Key Insights
 
 - **Recall optimization crucial**: Achieved 98% recall through cost-sensitive learning (balanced class weights) and degradation features
-- **Feature engineering impact**: Rolling std, EMA, and degradation patterns (cycle position, rate of change) improved ROC-AUC from 0.85 to 0.96
+- **Feature engineering impact**: Rolling std, EMA, and degradation patterns (cycle position, rate of change) improved ROC-AUC from 0.47 to 0.95
 - **Precision-recall trade-off**: Acceptable to have ~43% precision when recall is 98%+ in safety-critical maintenance
 - **Hyperparameter tuning**: Deeper trees (depth 30), more estimators (500), and balanced class weights enabled better minority class detection
 - **Random Forest selected**: Best precision-recall balance for safety-critical predictive maintenance
+
+## 📊 Project Showcase
+
+### Performance Visualizations
+
+<table>
+<tr>
+<td width="50%">
+
+#### Confusion Matrix
+
+![Confusion Matrix](<assets/confusion_matrix_random_forest_(balanced).png>)
+_Random Forest: 98.1% recall with balanced confusion matrix_
+
+</td>
+<td width="50%">
+
+#### ROC Curve
+
+![ROC Curve](assets/roc_curves_comparison.png)
+_ROC-AUC 0.945 demonstrates excellent discrimination_
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+#### Precision-Recall Curve
+
+![Precision-Recall](<assets/precision_recall_random_forest_(balanced).png>)
+_Optimized for high recall in safety-critical maintenance_
+
+</td>
+<td width="50%">
+
+#### Feature Importance
+
+![Feature Importance](<assets/feature_importance_random_forest_(balanced).png>)
+_Top features: degradation patterns and rolling statistics_
+
+</td>
+</tr>
+</table>
+
+### Key Takeaways from Visualizations
+
+- **Confusion Matrix**: Shows 98.1% of failures correctly identified (high recall)
+- **ROC Curve**: 0.945 AUC indicates excellent model discrimination
+- **Precision-Recall**: Trade-off optimized for safety (prefer false alarms over missed failures)
+- **Feature Importance**: Degradation features (cycle_norm, rate_of_change) are top predictors
+
+## ⚠️ Experimental Limitations
+
+While results are strong, several factors make the task easier than a real industrial deployment:
+
+- Failure defined at **90 cycles** (earlier warning makes detection easier)
+- Evaluation performed primarily on **FD001 dataset (single operating condition)**
+- Precision remains moderate (~40-45%), meaning false positives still occur
+- Model performance may vary across engines and operating regimes
+
+These limitations reflect realistic trade-offs in predictive maintenance, where maximizing failure detection is typically prioritized over minimizing false alarms.
+
+## 🧠 Key ML Lesson
+
+During early experiments, models achieved >93% accuracy yet detected **zero failures**; a classic failure mode in imbalanced classification.
+
+The issue was the default probability threshold (0.5), which prevented the model from predicting the rare failure class.
+
+By analyzing score distributions and optimizing the decision threshold for recall instead of accuracy:
+
+- Failure detection improved from **0% → ~98% recall**
+- ROC-AUC remained high, confirming real predictive signal
+- This demonstrated that **evaluation strategy and thresholding matter more than model choice** in rare-event detection
+
+This mirrors real predictive maintenance systems, where decision thresholds are tuned according to risk and cost rather than generic metrics.
 
 ## 🔮 Potential Improvements
 
@@ -275,7 +365,7 @@ While the current system achieves 98-99% recall (catching virtually all failures
 ### 2. **Failure Threshold Tuning**
 
 - **Current**: `failure_threshold = 100` cycles creates 49% failure rate (easier problem)
-- **Production**: Reduce to 50 cycles for more challenging, realistic prediction
+- **Production**: Reduce to 90 cycles for more challenging, realistic prediction
 - **Trade-off**: Higher difficulty but more actionable predictions (imminent failures only)
 - **Expected Impact**: Precision improves to 55-65%, recall drops to 85-90%
 
@@ -348,7 +438,7 @@ While the current system achieves 98-99% recall (catching virtually all failures
 
 **Medium Priority (Enhanced Performance):**
 
-4. Failure threshold tuning to 50 cycles
+4. ~~Failure threshold tuning to 50 cycles~~ (decreased to 90 as of **Feb 2026**)
 5. Ensemble methods (stacking/soft voting)
 6. Extended feature engineering
 
@@ -358,60 +448,6 @@ While the current system achieves 98-99% recall (catching virtually all failures
 8. Real-time streaming pipeline
 9. Automated hyperparameter optimization
 10. Cost-benefit optimization framework
-
----
-
-## 📊 Project Showcase
-
-### Performance Visualizations
-
-<table>
-<tr>
-<td width="50%">
-
-#### Confusion Matrix
-
-![Confusion Matrix](<assets/confusion_matrix_random_forest_(balanced).png>)
-_Random Forest: 98.3% recall with balanced confusion matrix_
-
-</td>
-<td width="50%">
-
-#### ROC Curve
-
-![ROC Curve](assets/roc_curves_comparison.png)
-_ROC-AUC 0.959 demonstrates excellent discrimination_
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-#### Precision-Recall Curve
-
-![Precision-Recall](<assets/precision_recall_random_forest_(balanced).png>)
-_Optimized for high recall in safety-critical maintenance_
-
-</td>
-<td width="50%">
-
-#### Feature Importance
-
-![Feature Importance](<assets/feature_importance_random_forest_(balanced).png>)
-_Top features: degradation patterns and rolling statistics_
-
-</td>
-</tr>
-</table>
-
-### Key Takeaways from Visualizations
-
-- **Confusion Matrix**: Shows 98.3% of failures correctly identified (high recall)
-- **ROC Curve**: 0.934 AUC indicates excellent model discrimination
-- **Precision-Recall**: Trade-off optimized for safety (prefer false alarms over missed failures)
-- **Feature Importance**: Degradation features (cycle_norm, rate_of_change) are top predictors
-
----
 
 ## 🧪 Testing
 

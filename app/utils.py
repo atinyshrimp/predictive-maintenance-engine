@@ -5,11 +5,12 @@ from pathlib import Path
 import pandas as pd
 import joblib
 import plotly.graph_objects as go
-from src.config import NOTEBOOK_BASELINE
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.config import NOTEBOOK_BASELINE
 
 # Paths
 MODELS_DIR = PROJECT_ROOT / "models"

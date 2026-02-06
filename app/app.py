@@ -6,6 +6,11 @@ Multi-page Streamlit application
 import streamlit as st
 from pathlib import Path
 import sys
+
+# Add project root to path for imports
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
 from utils import get_delta_results, load_results
 
 # Page configuration
@@ -15,9 +20,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# Add to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
 
 # Setup navigation with all pages
 pg = st.navigation([

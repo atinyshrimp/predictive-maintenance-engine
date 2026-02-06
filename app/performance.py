@@ -4,8 +4,9 @@ import streamlit as st
 import sys
 from pathlib import Path
 
-# Add parent to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add project root to path for imports
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from utils import load_results, get_delta_results, ASSETS_DIR, NOTEBOOK_BASELINE
 

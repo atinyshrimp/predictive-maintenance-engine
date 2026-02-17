@@ -11,8 +11,12 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 ASSETS_DIR = PROJECT_ROOT / "assets"
 LOGS_DIR = PROJECT_ROOT / "logs"
 
-# Ensure logs directory exists
-LOGS_DIR.mkdir(parents=True, exist_ok=True)
+# Try to create logs directory, but don't fail if filesystem is read-only
+try:
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    _file_logging_available = True
+except (OSError, PermissionError):
+    _file_logging_available = False
 
 # Data paths
 RAW_DATA_DIR = DATA_DIR / "CMaps"
@@ -63,6 +67,23 @@ API_CONFIG = {
 }
 
 # Logging configuration
+_log_handlers = {
+    "console": {
+        "class": "logging.StreamHandler",
+        "formatter": "default",
+        "level": "INFO",
+    },
+}
+
+# Only add file handler if directory is writable
+if _file_logging_available:
+    _log_handlers["file"] = {
+        "class": "logging.FileHandler",
+        "filename": str(LOGS_DIR / "app.log"),
+        "formatter": "default",
+        "level": "DEBUG",
+    }
+
 LOG_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -72,22 +93,10 @@ LOG_CONFIG = {
             "datefmt": "%Y-%m-%d %H:%M:%S",
         },
     },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "default",
-            "level": "INFO",
-        },
-        "file": {
-            "class": "logging.FileHandler",
-            "filename": LOGS_DIR / "app.log",
-            "formatter": "default",
-            "level": "DEBUG",
-        },
-    },
+    "handlers": _log_handlers,
     "root": {
         "level": "INFO",
-        "handlers": ["console", "file"],
+        "handlers": list(_log_handlers.keys()),
     },
 }
 

@@ -9,6 +9,10 @@ DATA_DIR = PROJECT_ROOT / "data"
 MODELS_DIR = PROJECT_ROOT / "models"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 ASSETS_DIR = PROJECT_ROOT / "assets"
+LOGS_DIR = PROJECT_ROOT / "logs"
+
+# Ensure logs directory exists
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Data paths
 RAW_DATA_DIR = DATA_DIR / "CMaps"
@@ -76,7 +80,7 @@ LOG_CONFIG = {
         },
         "file": {
             "class": "logging.FileHandler",
-            "filename": PROJECT_ROOT / "logs" / "app.log",
+            "filename": LOGS_DIR / "app.log",
             "formatter": "default",
             "level": "DEBUG",
         },
